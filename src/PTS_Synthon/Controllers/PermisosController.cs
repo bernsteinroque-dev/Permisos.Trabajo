@@ -108,10 +108,11 @@ public class PermisosController : ControllerBase
     public async Task<IActionResult> BuscarPorNumero(string numero)
     {
         if (!int.TryParse(numero, out var n))
-            return Ok((object?)null);
+            return NotFound(new { found = false });
 
         var p = await _db.Permisos.FirstOrDefaultAsync(x => x.NumeroPermiso == n);
-        return Ok(p);
+        if (p == null) return NotFound(new { found = false });
+        return Ok(new { found = true, id = p.Id, numero = p.NumeroPermiso, tipo = p.Tipo });
     }
 
     [HttpPost]

@@ -2083,13 +2083,14 @@ function currentTimeHHMMSS() { const n = new Date(); return String(n.getHours())
 async function validarPtsOrigen(el) {
   const val = el.value.trim();
   if (!val) return;
-  if (!/^\d+$/.test(val)) { showToast('⚠️ PTS Origen: ingrese solo el número de permiso.'); el.focus(); return; }
+  if (!/^\d+$/.test(val)) { showToast('⚠️ PTS Origen: ingresá solo el número de permiso.'); el.style.borderColor = 'var(--dusty-red)'; el.focus(); return; }
   try {
     const res = await fetch('/api/permisos/buscar/' + val, { credentials: 'same-origin' });
-    if (res.ok) {
-      const found = await res.json();
-      if (!found) { showToast('⚠️ PTS N° ' + val + ' no existe en el sistema.'); el.style.borderColor = 'var(--dusty-red)'; el.focus(); }
-      else { el.style.borderColor = ''; }
+    if (!res.ok) {
+      showToast('⚠️ PTS N° ' + val + ' no existe en el sistema.');
+      el.style.borderColor = 'var(--dusty-red)';
+    } else {
+      el.style.borderColor = '';
     }
   } catch(e) { console.warn('validarPtsOrigen error:', e); }
 }
@@ -2490,9 +2491,8 @@ async function submitForm() {
     if (!/^\d+$/.test(ptsOrigVal)) { showToast('⚠️ PTS Origen: ingresá solo el número'); document.getElementById('cl_pts_orig')?.focus(); return; }
     try {
       const chk = await fetch('/api/permisos/buscar/' + ptsOrigVal, { credentials: 'same-origin' });
-      const found = chk.ok ? await chk.json() : null;
-      if (!found) {
-        showToast('❌ PTS N° ' + ptsOrigVal + ' no existe. Verificá el número antes de continuar.');
+      if (!chk.ok) {
+        showToast('❌ PTS N° ' + ptsOrigVal + ' no existe en el sistema. Verificá el número.');
         const el = document.getElementById('cl_pts_orig');
         if (el) { el.style.borderColor = 'var(--dusty-red)'; el.focus(); }
         return;
