@@ -2502,19 +2502,23 @@ function startForm(tipo) {
    SUBMIT — POST a la API
 ══════════════════════════════════════════════ */
 async function submitForm() {
-  const desc = g('f_desc').trim(), emisor = g('f_emisor').trim();
-  if (!desc || !emisor) { showToast('⚠️ Completá la Descripción y el Emisor'); return; }
-  if (currentTipo === 'pts' && !validatePTSDateFields()) return;
-
+  // 1. Validar proveedor (primero)
   const provIdStr = g('f_prov');
-  const provIdNum = parseInt(provIdStr) || null;
   const prov = proveedores.find(p => String(p.id) === String(provIdStr)) || null;
-  if (!prov) {
+  if (!provIdStr || !prov) {
     showToast('⚠️ Seleccioná un Proveedor antes de continuar');
     const sel = document.getElementById('f_prov');
     if (sel) { sel.style.borderColor = 'var(--dusty-red)'; sel.focus(); }
     return;
   }
+
+  // 2. Validar descripción y emisor
+  const desc = g('f_desc').trim(), emisor = g('f_emisor').trim();
+  if (!desc) { showToast('⚠️ Completá la Descripción del trabajo'); document.getElementById('f_desc')?.focus(); return; }
+  if (!emisor) { showToast('⚠️ Completá el campo Emisor'); document.getElementById('f_emisor')?.focus(); return; }
+  if (currentTipo === 'pts' && !validatePTSDateFields()) return;
+
+  const provIdNum = parseInt(provIdStr) || null;
   if (!prov.email) {
     const ok = confirm('⚠️ El proveedor no tiene email registrado.\nPodrás ver el preview pero no enviar el correo automáticamente.\n¿Continuar?');
     if (!ok) return;
