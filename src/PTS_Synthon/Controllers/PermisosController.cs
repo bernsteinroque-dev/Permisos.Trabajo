@@ -112,7 +112,20 @@ public class PermisosController : ControllerBase
 
         var p = await _db.Permisos.FirstOrDefaultAsync(x => x.NumeroPermiso == n);
         if (p == null) return NotFound(new { found = false });
-        return Ok(new { found = true, id = p.Id, numero = p.NumeroPermiso, tipo = p.Tipo });
+        return Ok(new {
+            found = true,
+            id = p.Id,
+            numero = p.NumeroPermiso,
+            tipo = p.Tipo,
+            desde = p.VigenciaDesde,
+            hasta = p.VigenciaHasta,
+            orden = p.Orden,
+            planta = p.Planta,
+            equipo = p.Equipo,
+            realiza = p.RealizaElTrabajo,
+            desc = p.Descripcion,
+            empresa = p.EmpresaPlanta
+        });
     }
 
     [HttpPost]

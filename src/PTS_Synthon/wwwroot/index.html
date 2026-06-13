@@ -1801,6 +1801,7 @@ let role = 'proveedor';
 let filtMode = 'all';
 let currentTipo = '';
 let editProvId = null;
+let _linkedPts = null; // datos del PTS vinculado en caliente/altura
 let currentDetailId = null;
 let currentUser = '';
 let currentCompany = 'Synthon S.A.';
@@ -2097,6 +2098,8 @@ function _setSubmitBlocked(blocked, msg) {
 }
 async function validarPtsOrigen(el) {
   const val = el.value.trim();
+  _linkedPts = null;
+  hidePtsOrigenInfo();
   if (!val) { _setSubmitBlocked(true, 'El campo PTS Origen es obligatorio'); el.style.borderColor = 'var(--dusty-red)'; return; }
   if (!/^\d+$/.test(val)) {
     showToast('⚠️ PTS Origen: ingresá solo el número de permiso.');
@@ -2111,8 +2114,9 @@ async function validarPtsOrigen(el) {
       el.style.borderColor = 'var(--dusty-red)';
       _setSubmitBlocked(true, 'PTS N° ' + val + ' no existe');
     } else {
-      el.style.borderColor = '';
-      // Solo habilitar si también hay proveedor seleccionado
+      _linkedPts = await res.json();
+      el.style.borderColor = 'var(--sage)';
+      showPtsOrigenInfo(_linkedPts);
       const provVal = g('f_prov');
       if (provVal) _setSubmitBlocked(false);
     }
@@ -2121,6 +2125,26 @@ async function validarPtsOrigen(el) {
     showToast('⚠️ No se pudo verificar el PTS Origen.');
     _setSubmitBlocked(true, 'Error al verificar PTS Origen');
   }
+}
+function showPtsOrigenInfo(pts) {
+  let box = document.getElementById('ptsOrigenInfo');
+  if (!box) return;
+  const rows = [
+    ['Vigencia Desde', fmtDate(pts.desde)],
+    ['Vigencia Hasta', fmtDate(pts.hasta)],
+    ['Orden / Pedido N°', pts.orden],
+    ['Planta / Sector', pts.planta],
+    ['Equipo / Instalación', pts.equipo],
+    ['Realiza el Trabajo', pts.realiza],
+  ].filter(([, v]) => v).map(([k, v]) => `<div class="prev-row"><span class="prev-key">${k}</span><span class="prev-val">${v}</span></div>`).join('');
+  if (rows) {
+    box.innerHTML = `<div class="fsec" style="border-color:var(--sage);margin-top:8px"><div class="prev-sec-title green-t">✅ Datos del PTS N° ${pts.numero}</div><div class="prev-body">${rows}</div></div>`;
+    box.style.display = 'block';
+  }
+}
+function hidePtsOrigenInfo() {
+  const box = document.getElementById('ptsOrigenInfo');
+  if (box) { box.innerHTML = ''; box.style.display = 'none'; }
 }
 function ddmmyyyyToISO(v) {
   const m = String(v || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -2407,6 +2431,7 @@ function startForm(tipo) {
           <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
           <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado" onblur="validarPtsOrigen(this)"></div>
         </div>
+        <div id="ptsOrigenInfo" style="display:none"></div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
       </div>
     </div>
@@ -2476,6 +2501,7 @@ function startForm(tipo) {
           <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
           <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado" onblur="validarPtsOrigen(this)"></div>
         </div>
+        <div id="ptsOrigenInfo" style="display:none"></div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
       </div>
     </div>
@@ -2514,6 +2540,7 @@ function startForm(tipo) {
 
   document.getElementById('fBody').innerHTML = html;
   showPage('pageForm');
+  _linkedPts = null;
   // Bloquear envío hasta seleccionar proveedor (siempre) y hasta validar PTS Origen (caliente/altura)
   setTimeout(() => {
     _setSubmitBlocked(true, 'Seleccioná un proveedor para continuar');
@@ -2576,15 +2603,15 @@ async function submitForm() {
     provNombre: prov ? prov.razon : g('f_empresa'),
     provEmail: prov ? prov.email : '',
     fecha: ddmmyyyyToISO(g('f_fecha')) || today(),
-    desde: g('f_desde'),
-    hasta: g('f_hasta'),
-    orden: g('f_orden'),
-    planta: g('f_planta'),
-    equipo: g('f_equipo'),
+    desde: g('f_desde') || (_linkedPts ? _linkedPts.desde : ''),
+    hasta: g('f_hasta') || (_linkedPts ? _linkedPts.hasta : ''),
+    orden: g('f_orden') || (_linkedPts ? _linkedPts.orden : ''),
+    planta: g('f_planta') || (_linkedPts ? _linkedPts.planta : ''),
+    equipo: g('f_equipo') || (_linkedPts ? _linkedPts.equipo : ''),
     desc,
     emisor,
     receptor: g('f_receptor'),
-    realiza: g('f_realiza'),
+    realiza: g('f_realiza') || (_linkedPts ? _linkedPts.realiza : ''),
     empresa: g('f_empresa'),
     verifs: currentTipo === 'pts' ? VERIF_PTS.map((_, i) => _vs['p' + i] || 'N/A') : [],
     peligros: [..._peligros],
