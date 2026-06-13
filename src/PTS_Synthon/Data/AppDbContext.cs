@@ -39,7 +39,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CheckListJson).HasColumnType("nvarchar(max)");
             entity.Property(e => e.Descripcion).HasColumnType("nvarchar(max)");
             entity.Property(e => e.Observaciones).HasColumnType("nvarchar(max)");
-            entity.Ignore(e => e.UsuarioCreadorDisplay);
 
             entity.HasOne(e => e.Proveedor)
                 .WithMany(p => p.Permisos)
