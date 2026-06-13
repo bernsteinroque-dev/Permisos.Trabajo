@@ -1204,18 +1204,18 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 .prev-sec-title.red-t   { color: #C47E4A; border-left: 3px solid #C47E4A; }
 .prev-sec-title.green-t { color: #5a8a6e; border-left: 3px solid #5a8a6e; }
 .prev-sec-title.blue-t  { color: #B08D57; border-left: 3px solid #B08D57; }
-.prev-body { padding: 12px 14px; }
+.prev-body { padding: 12px 14px; background: #ffffff; }
 .prev-row {
   display: flex; justify-content: space-between; align-items: flex-start;
-  padding: 7px 0; border-bottom: 1px solid var(--line); gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,.07); gap: 8px;
 }
 .prev-row:last-child { border-bottom: none; }
-.prev-key { font-size: 12px; color: var(--ink3); min-width: 120px; max-width: 50%; flex-shrink: 0; }
-.prev-val { font-size: 12.5px; font-weight: 600; text-align: right; color: var(--ink); word-break: break-word; max-width: 55%; }
+.prev-key { font-size: 12px; color: #7a6354; min-width: 120px; max-width: 50%; flex-shrink: 0; }
+.prev-val { font-size: 12.5px; font-weight: 600; text-align: right; color: #2a2018; word-break: break-word; max-width: 55%; }
 .vp { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10.5px; font-weight: 700; }
 .vp-si  { background: var(--sage-soft); color: var(--sage); }
 .vp-no  { background: var(--dusty-red-soft); color: var(--dusty-red); }
-.vp-na  { background: var(--cream3); color: var(--ink3); }
+.vp-na  { background: var(--cream3); color: #7a6354; }
 
 /* ═══════════════════════════════════════════════════════
    PROVEEDORES
@@ -1468,31 +1468,21 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
     </div>
 
     <div class="login-field">
-      <label>Usuario</label>
-      <input type="text" id="loginNombre" placeholder="Ej: Juan García" autocomplete="name" oninput="hideLoginWarning()">
-      <div id="loginWarning" style="display:none;margin-top:10px;padding:11px 14px;background:rgba(231,76,60,.18);border:1.5px solid rgba(231,76,60,.55);border-radius:10px;align-items:center;gap:10px;animation:scaleIn .25s cubic-bezier(.34,1.56,.64,1);">
-        <span style="font-size:22px;flex-shrink:0">⚠️</span>
+      <label>Usuario de Dominio</label>
+      <input type="text" id="loginNombre" placeholder="Verificando autenticación..." autocomplete="off" readonly style="cursor:default;opacity:.9">
+      <div id="loginWarning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(180,30,30,.22);border:1.5px solid rgba(220,60,60,.55);border-radius:10px;align-items:flex-start;gap:10px;animation:scaleIn .25s cubic-bezier(.34,1.56,.64,1);">
+        <span style="font-size:22px;flex-shrink:0">🚫</span>
         <div>
-          <div style="font-size:13px;font-weight:700;color:#ff8070;letter-spacing:.1px">Campo requerido</div>
-          <div style="font-size:11.5px;color:rgba(255,190,180,.85);margin-top:2px">Debés ingresar tu nombre de usuario para continuar.</div>
+          <div id="loginWarnTitle" style="font-size:13px;font-weight:700;color:#ff8070;letter-spacing:.1px">Acceso Denegado</div>
+          <div id="loginWarnMsg" style="font-size:11.5px;color:rgba(255,190,180,.85);margin-top:3px">No tiene permisos para acceder a esta aplicación.</div>
         </div>
       </div>
     </div>
 
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Rol de acceso</div>
-    <div class="login-role-row" id="loginRoleRow">
-      <div class="role-btn on" onclick="selectRole(this,'proveedor')">
-        <span class="r-icon">👷</span>Proveedor
-      </div>
-      <div class="role-btn" onclick="selectRole(this,'supervisor')">
-        <span class="r-icon">🔑</span>Supervisor
-      </div>
+    <div id="adRoleNote" style="display:none;text-align:center;margin-bottom:12px;padding:9px 14px;background:rgba(90,138,110,.18);border:1px solid rgba(90,138,110,.40);border-radius:10px;font-size:12px;color:rgba(255,255,255,.9);">
+      🔐 Autenticado como: <strong id="adRoleText" style="color:#a8d5b5">—</strong>
     </div>
-
-    <div id="adRoleNote" style="display:none;text-align:center;margin-bottom:10px;padding:8px 12px;background:rgba(196,126,74,.15);border:1px solid rgba(196,126,74,.35);border-radius:10px;font-size:11.5px;color:rgba(255,255,255,.8);">
-      🔐 Rol detectado por Active Directory: <strong id="adRoleText">—</strong>
-    </div>
-    <button class="login-btn" onclick="doLogin()">Ingresar al Sistema</button>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Ingresar al Sistema</button>
 
     <div class="login-footer">
       Sistema de Gestión PTS — SOP.AR01.PR.251 (6.0)<br>
@@ -1830,39 +1820,44 @@ async function initAuth() {
     if (res.ok) {
       _windowsUser = await res.json();
       if (_windowsUser && _windowsUser.role === 'denied') {
-        // User is authenticated in Windows but not in any PTS group
-        showAccessDenied(_windowsUser.errorMessage || 'Sin permisos en la aplicación.');
+        document.getElementById('loginNombre').value = _windowsUser.name || '';
+        showAccessDenied(_windowsUser.errorMessage || `El usuario '${_windowsUser.name}' no tiene permisos de acceso. Contacte al Administrador del Sistema.`);
         return;
       }
       if (_windowsUser && _windowsUser.isAuthenticated) {
         document.getElementById('loginNombre').value = _windowsUser.name || '';
         hideLoginWarning();
-        const uiRole = (_windowsUser.role === 'admin' || _windowsUser.role === 'supervisor') ? 'supervisor' : 'proveedor';
-        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('on'));
-        const roleBtn = document.querySelector(`.role-btn[onclick*="'${uiRole}'"]`);
-        if (roleBtn) { roleBtn.classList.add('on'); _selectedRole = uiRole; }
+        const labels = { admin: 'Administrador del Sistema', supervisor: 'Supervisor', proveedor: 'Proveedor / Contratista', lectura: 'Solo Lectura' };
         const note = document.getElementById('adRoleNote');
         const roleText = document.getElementById('adRoleText');
         if (note && roleText) {
-          const labels = { admin: 'Administrador', supervisor: 'Supervisor', proveedor: 'Proveedor', lectura: 'Solo Lectura' };
-          roleText.textContent = labels[_windowsUser.role] || _windowsUser.role;
+          roleText.textContent = `${_windowsUser.name} — ${labels[_windowsUser.role] || _windowsUser.role}`;
           note.style.display = 'block';
         }
+      } else {
+        showAccessDenied('No fue posible autenticar al usuario. Verifique que su equipo esté conectado al dominio SYNTHON.');
       }
-    } else if (res.status === 401) {
+    } else {
       showAccessDenied('No fue posible autenticar al usuario. Verifique que su equipo esté conectado al dominio SYNTHON.');
     }
-  } catch (e) { console.warn('Auth check failed:', e); }
+  } catch (e) {
+    console.warn('Auth check failed:', e);
+    showAccessDenied('Error de conexión al verificar el usuario. Reintente o contacte al Administrador.');
+  }
 }
 
 function showAccessDenied(msg) {
+  document.getElementById('loginNombre').value = document.getElementById('loginNombre').value || 'Sin acceso';
   const w = document.getElementById('loginWarning');
   if (w) {
     w.style.display = 'flex';
-    w.innerHTML = `<span style="font-size:20px">🚫</span><div><strong>Acceso Denegado</strong><br><span style="font-size:12px">${msg}</span></div>`;
+    const titleEl = document.getElementById('loginWarnTitle');
+    const msgEl = document.getElementById('loginWarnMsg');
+    if (titleEl) titleEl.textContent = 'Acceso Denegado';
+    if (msgEl) msgEl.textContent = msg;
   }
-  const btn = document.querySelector('.login-btn');
-  if (btn) btn.disabled = true;
+  const btn = document.getElementById('loginBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.style.cursor = 'not-allowed'; }
 }
 
 function selectCompany(el, name) {
@@ -1876,29 +1871,19 @@ function selectRole(el, r) {
   _selectedRole = r;
 }
 function hideLoginWarning() {
-  const w = document.getElementById('loginWarning');
-  if (w) w.style.display = 'none';
-  const inp = document.getElementById('loginNombre');
-  if (inp) { inp.style.borderColor = ''; inp.style.boxShadow = ''; }
+  // Only hide if it's a validation warning, not an access-denied block
+  if (_windowsUser?.isAuthenticated && _windowsUser?.role !== 'denied') {
+    const w = document.getElementById('loginWarning');
+    if (w) w.style.display = 'none';
+  }
 }
 async function doLogin() {
-  const nom = document.getElementById('loginNombre').value.trim();
-  if (!nom) {
-    const w = document.getElementById('loginWarning');
-    w.style.display = 'flex';
-    w.style.animation = 'none';
-    setTimeout(() => { w.style.animation = 'scaleIn .25s cubic-bezier(.34,1.56,.64,1)'; }, 10);
-    document.getElementById('loginNombre').style.borderColor = 'rgba(231,76,60,.7)';
-    document.getElementById('loginNombre').style.boxShadow = '0 0 0 3px rgba(231,76,60,.20)';
-    document.getElementById('loginNombre').focus();
+  // Strict auth: must have a valid Windows authenticated user in a PTS group
+  if (!_windowsUser || !_windowsUser.isAuthenticated || _windowsUser.role === 'denied') {
+    showAccessDenied((_windowsUser?.errorMessage) || 'Acceso denegado. El usuario no está autenticado o no pertenece a ningún grupo de la aplicación.');
     return;
   }
-  // Block denied users from proceeding
-  if (_windowsUser?.role === 'denied' || (_windowsUser && !_windowsUser.isAuthenticated && _windowsUser.role === 'denied')) {
-    showAccessDenied(_windowsUser.errorMessage || 'Sin permisos en la aplicación.');
-    return;
-  }
-  currentUser = nom;
+  currentUser = _windowsUser.name || _windowsUser.windowsUser || 'Usuario';
   currentCompany = _selectedCompany;
   role = _windowsUser?.role || _selectedRole;
 

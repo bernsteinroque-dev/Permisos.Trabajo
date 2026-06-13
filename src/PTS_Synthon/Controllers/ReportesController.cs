@@ -117,131 +117,215 @@ public class ReportesController : ControllerBase
         var p = await _db.Permisos.FindAsync(permisoId);
         if (p == null) return NotFound();
 
+        var tipoLabel = p.Tipo switch { "pts" => "Permiso de Trabajo Seguro (PTS)", "caliente" => "Trabajo en Caliente", "altura" => "Trabajo en Altura", _ => p.Tipo ?? "Permiso" };
+        var statusText = p.Estado switch { "approved" => "✔ APROBADO", "rejected" => "✘ RECHAZADO", _ => "⏳ PENDIENTE" };
+        var statusColor = p.Estado switch { "approved" => Colors.Green.Darken2, "rejected" => Colors.Red.Darken2, _ => Colors.Orange.Darken2 };
+
+        var verifPts = new[] { "¿Los factores externos permiten el trabajo?","¿El equipo está detenido?","¿Desconectado/bloqueado y con tarjetas?","¿Purgado/lavado/ventilado/inertizado?","¿Accesos y pisos seguros?","¿Trabajos en proximidades?","¿EPP adecuados y en buenas condiciones?","¿Zona vallada?","¿Operaciones adyacentes seguras?","¿Medidas para evitar volcamiento a desagüas?","¿Libre de sustancias peligrosas?","¿Iluminación adecuada?","¿Equipos y herramientas en buen estado?","¿Equipos de izaje adecuados?","Otras" };
+        var verifs = p.Verificaciones;
+        var peligros = p.Peligros;
+        var epp = p.EppGeneral;
+
+        static void PdfRow(ColumnDescriptor col, string label, string? value)
+        {
+            col.Item().Row(row =>
+            {
+                row.RelativeItem(2).Text(label).FontSize(9).FontColor(Colors.Grey.Darken2);
+                row.RelativeItem(3).Text(value ?? "—").FontSize(9).Bold();
+            });
+            col.Item().PaddingBottom(2).LineHorizontal(0.3f).LineColor(Colors.Grey.Lighten3);
+        }
+
+        static void SectionTitle(ColumnDescriptor col, string title, string color)
+        {
+            col.Item().PaddingTop(10).PaddingBottom(3).BorderLeft(3).BorderColor(color)
+                .PaddingLeft(6).Text(title).Bold().FontSize(10).FontColor(color);
+        }
+
         var doc = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(30);
-                page.DefaultTextStyle(t => t.FontSize(10).FontFamily("Arial"));
+                page.Margin(28);
+                page.DefaultTextStyle(t => t.FontSize(9.5f).FontFamily("Arial"));
 
                 page.Header().Column(col =>
                 {
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Text("SYNTHON S.A.")
-                            .Bold().FontSize(18).FontColor(Colors.Orange.Darken2);
-                        row.ConstantItem(200).AlignRight().Column(c =>
+                        row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text($"PERMISO DE TRABAJO N° {p.NumeroPermiso}")
-                                .Bold().FontSize(12);
-                            c.Item().Text($"Tipo: {p.Tipo?.ToUpper() ?? ""}").FontSize(10);
+                            c.Item().Text("SYNTHON S.A.").Bold().FontSize(16).FontColor(Colors.Orange.Darken2);
+                            c.Item().Text("SOP.AR01.PR.251 (6.0) — Sistema de Permisos de Trabajo").FontSize(8).FontColor(Colors.Grey.Darken1);
+                        });
+                        row.ConstantItem(170).AlignRight().Column(c =>
+                        {
+                            c.Item().Text($"N° {p.NumeroPermiso}").Bold().FontSize(18).FontColor(Colors.Orange.Darken2).AlignRight();
+                            c.Item().Text(tipoLabel).FontSize(8).FontColor(Colors.Grey.Darken2).AlignRight();
                         });
                     });
-                    col.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Orange.Darken2);
+                    col.Item().PaddingTop(4).LineHorizontal(1.5f).LineColor(Colors.Orange.Darken2);
+                    col.Item().PaddingTop(4).Background(statusColor).Padding(5)
+                        .Text(statusText).FontColor(Colors.White).Bold().FontSize(10).AlignCenter();
                 });
 
-                page.Content().PaddingTop(15).Column(col =>
+                page.Content().PaddingTop(12).Column(col =>
                 {
-                    var statusColor = p.Estado switch
-                    {
-                        "approved" => Colors.Green.Darken1,
-                        "rejected" => Colors.Red.Darken1,
-                        _ => Colors.Orange.Medium
-                    };
-                    var statusText = p.Estado switch
-                    {
-                        "approved" => "APROBADO",
-                        "rejected" => "RECHAZADO",
-                        _ => "PENDIENTE"
-                    };
-                    col.Item().Background(statusColor).Padding(5)
-                        .Text(statusText).FontColor(Colors.White).Bold().FontSize(11).AlignCenter();
-
-                    col.Item().PaddingTop(10).Text("DATOS GENERALES").Bold().FontSize(11);
-                    col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten2);
-
-                    col.Item().PaddingTop(5).Row(row =>
+                    // DATOS GENERALES
+                    SectionTitle(col, "DATOS GENERALES", Colors.Orange.Darken2);
+                    col.Item().Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text($"Proveedor: {p.ProveedorNombre ?? "-"}");
-                            c.Item().Text($"Empresa: {p.Empresa ?? "-"}");
-                            c.Item().Text($"Fecha: {p.Fecha ?? "-"}");
-                            c.Item().Text($"Orden de Trabajo: {p.Orden ?? "-"}");
+                            PdfRow(c, "N° Permiso", p.NumeroPermiso.ToString());
+                            PdfRow(c, "Empresa / Planta", p.EmpresaPlanta);
+                            PdfRow(c, "Proveedor / Empresa", p.ProveedorNombre ?? p.Empresa);
+                            PdfRow(c, "Fecha", p.Fecha);
+                            PdfRow(c, "Vigencia Desde", p.VigenciaDesde);
+                            PdfRow(c, "Vigencia Hasta", p.VigenciaHasta);
                         });
+                        row.ConstantItem(8);
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text($"Planta: {p.Planta ?? "-"}");
-                            c.Item().Text($"Equipo: {p.Equipo ?? "-"}");
-                            c.Item().Text($"Vigencia: {p.VigenciaDesde ?? "-"} al {p.VigenciaHasta ?? "-"}");
-                            c.Item().Text($"Realiza el Trabajo: {p.RealizaElTrabajo ?? "-"}");
+                            PdfRow(c, "Orden / Pedido", p.Orden);
+                            PdfRow(c, "Planta / Sector", p.Planta);
+                            PdfRow(c, "Equipo / Instalación", p.Equipo);
+                            PdfRow(c, "Realiza el trabajo", p.RealizaElTrabajo);
+                            PdfRow(c, "Email Proveedor", p.ProveedorEmail);
+                            PdfRow(c, "Creado por", p.CreadoPor);
                         });
                     });
 
-                    col.Item().PaddingTop(8).Text("DESCRIPCIÓN DEL TRABAJO").Bold().FontSize(11);
-                    col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten2);
-                    col.Item().PaddingTop(5).Text(p.Descripcion ?? "-");
+                    // DESCRIPCIÓN
+                    SectionTitle(col, "DESCRIPCIÓN DEL TRABAJO", Colors.Orange.Darken2);
+                    col.Item().Background(Colors.Grey.Lighten4).Padding(6).Text(p.Descripcion ?? "—").FontSize(9);
 
+                    // VERIFICACIONES (PTS only)
+                    if (verifs != null && verifs.Count > 0 && p.Tipo == "pts")
+                    {
+                        SectionTitle(col, "VERIFICACIONES PREVIAS", Colors.Orange.Darken2);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c => { c.RelativeColumn(5); c.ConstantColumn(40); });
+                            table.Header(h =>
+                            {
+                                h.Cell().Background(Colors.Orange.Lighten4).Padding(3).Text("Pregunta").Bold().FontSize(8);
+                                h.Cell().Background(Colors.Orange.Lighten4).Padding(3).Text("Resp.").Bold().FontSize(8).AlignCenter();
+                            });
+                            for (int i = 0; i < verifPts.Length; i++)
+                            {
+                                var v = i < verifs.Count ? verifs[i] : "N/A";
+                                var bg = v == "SI" ? Colors.Green.Lighten4 : v == "NO" ? Colors.Red.Lighten4 : Colors.Grey.Lighten4;
+                                table.Cell().BorderBottom(0.3f).BorderColor(Colors.Grey.Lighten3).Padding(3).Text($"{i + 1}. {verifPts[i]}").FontSize(8);
+                                table.Cell().BorderBottom(0.3f).BorderColor(Colors.Grey.Lighten3).Background(bg).Padding(3).Text(v).FontSize(8).Bold().AlignCenter();
+                            }
+                        });
+                    }
+
+                    // PELIGROS
+                    if (peligros != null && peligros.Count > 0)
+                    {
+                        SectionTitle(col, "PELIGROS IDENTIFICADOS", Colors.Red.Darken2);
+                        col.Item().Row(row => {
+                            foreach (var pg in peligros)
+                                row.AutoItem().Padding(2).Background(Colors.Red.Lighten4).Padding(3).Text(pg).FontSize(8);
+                        });
+                    }
+
+                    // EPP
+                    if (epp != null && epp.Count > 0)
+                    {
+                        SectionTitle(col, "EPP REQUERIDO", Colors.Orange.Darken2);
+                        col.Item().Row(row => {
+                            foreach (var e in epp)
+                                row.AutoItem().Padding(2).Background(Colors.Orange.Lighten4).Padding(3).Text(e).FontSize(8);
+                        });
+                    }
+
+                    // EQUIPOS Y CONTROLES
+                    SectionTitle(col, "EQUIPOS Y CONTROLES", Colors.Orange.Darken2);
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            PdfRow(c, "Herramienta Antichispa", p.HerramientaAntichispa);
+                            PdfRow(c, "Iluminación Especial", p.IluminacionEspecial);
+                        });
+                        row.ConstantItem(8);
+                        row.RelativeItem().Column(c =>
+                        {
+                            PdfRow(c, "Genera Residuos", p.GeneraResiduos);
+                        });
+                    });
+
+                    // CONSIGNACIONES
+                    SectionTitle(col, "CONSIGNACIONES", Colors.Orange.Darken2);
+                    col.Item().Column(c =>
+                    {
+                        PdfRow(c, "¿Se consignó?", p.Consigno);
+                        PdfRow(c, "¿Cuál?", p.ConsignoCual);
+                        PdfRow(c, "¿Quién consignó?", p.ConsignoQuien);
+                    });
+
+                    // OBSERVACIONES
                     if (!string.IsNullOrEmpty(p.Observaciones))
                     {
-                        col.Item().PaddingTop(8).Text("OBSERVACIONES").Bold().FontSize(11);
-                        col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten2);
-                        col.Item().PaddingTop(5).Text(p.Observaciones);
+                        SectionTitle(col, "OBSERVACIONES", Colors.Grey.Darken2);
+                        col.Item().Background(Colors.Grey.Lighten4).Padding(6).Text(p.Observaciones).FontSize(9);
                     }
 
-                    col.Item().PaddingTop(10).Text("FIRMAS").Bold().FontSize(11);
-                    col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten2);
-                    col.Item().PaddingTop(5).Row(row =>
+                    // FIRMAS
+                    SectionTitle(col, "FIRMAS", Colors.Orange.Darken2);
+                    col.Item().Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text($"Emisor: {p.Emisor ?? "-"}");
-                            c.Item().Text($"Receptor: {p.Receptor ?? "-"}");
+                            PdfRow(c, "Emisor", p.Emisor);
+                            PdfRow(c, "Receptor", p.Receptor);
                         });
+                        row.ConstantItem(8);
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text($"Ejecutante 1: {p.Ejecutante1 ?? "-"}");
-                            c.Item().Text($"Ejecutante 2: {p.Ejecutante2 ?? "-"}");
-                            c.Item().Text($"Ejecutante 3: {p.Ejecutante3 ?? "-"}");
-                            c.Item().Text($"Ejecutante 4: {p.Ejecutante4 ?? "-"}");
+                            if (!string.IsNullOrEmpty(p.Ejecutante1)) PdfRow(c, "Ejecutante 1", p.Ejecutante1);
+                            if (!string.IsNullOrEmpty(p.Ejecutante2)) PdfRow(c, "Ejecutante 2", p.Ejecutante2);
+                            if (!string.IsNullOrEmpty(p.Ejecutante3)) PdfRow(c, "Ejecutante 3", p.Ejecutante3);
+                            if (!string.IsNullOrEmpty(p.Ejecutante4)) PdfRow(c, "Ejecutante 4", p.Ejecutante4);
                         });
                     });
 
+                    // TERMINACIÓN
+                    SectionTitle(col, "TERMINACIÓN DEL TRABAJO", Colors.Green.Darken2);
+                    col.Item().Column(c =>
+                    {
+                        PdfRow(c, "¿Terminó el trabajo?", p.TerminacionTrabajo);
+                        PdfRow(c, "¿Sector limpio?", p.LimpiezaSector);
+                        PdfRow(c, "Firma Terminación", p.TermFirma);
+                        PdfRow(c, "Recepción Emisor", p.RecepcionEmisor);
+                        PdfRow(c, "Firma Recepción", p.RecepcionFirma);
+                    });
+
+                    // SUPERVISIÓN
                     if (!string.IsNullOrEmpty(p.SupervisorNombre))
                     {
-                        col.Item().PaddingTop(10).Text("SUPERVISIÓN").Bold().FontSize(11);
-                        col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten2);
-                        col.Item().PaddingTop(5).Column(c =>
+                        SectionTitle(col, "DECISIÓN DEL SUPERVISOR", Colors.Green.Darken2);
+                        col.Item().Column(c =>
                         {
-                            c.Item().Text($"Supervisor: {p.SupervisorNombre}");
-                            if (!string.IsNullOrEmpty(p.SupervisorComentario))
-                                c.Item().Text($"Comentario: {p.SupervisorComentario}");
+                            PdfRow(c, "Supervisor", p.SupervisorNombre);
+                            PdfRow(c, "Estado", statusText);
+                            PdfRow(c, "Comentario", p.SupervisorComentario);
+                            PdfRow(c, "Fecha Aprobación", p.FechaModificacion?.ToString("dd/MM/yyyy HH:mm"));
                         });
                     }
-
-                    col.Item().PaddingTop(15).Row(row =>
-                    {
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Item().Text($"Creado por: {p.CreadoPor}");
-                            c.Item().Text($"Fecha creación: {p.FechaCreacion:dd/MM/yyyy HH:mm}");
-                        });
-                        row.RelativeItem().AlignRight().Column(c =>
-                        {
-                            c.Item().Text($"Empresa Planta: {p.EmpresaPlanta}");
-                        });
-                    });
                 });
 
-                page.Footer().AlignCenter()
-                    .Text(txt =>
-                    {
-                        txt.Span("PTS Synthon - Sistema de Permisos de Trabajo | Página ");
-                        txt.CurrentPageNumber();
-                        txt.Span(" de ");
-                        txt.TotalPages();
-                    });
+                page.Footer().AlignCenter().Text(txt =>
+                {
+                    txt.Span($"PTS Synthon — {tipoLabel} N° {p.NumeroPermiso} | Generado: {DateTime.Now:dd/MM/yyyy HH:mm} | Página ");
+                    txt.CurrentPageNumber();
+                    txt.Span(" de ");
+                    txt.TotalPages();
+                });
             });
         });
 
