@@ -1729,11 +1729,11 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
         <div class="report-filters">
           <div>
             <label class="lbl">Desde</label>
-            <input type="date" id="repDesde">
+            <div class="dp-wrap"><input type="text" id="repDesde" placeholder="dd/mm/aaaa" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div>
           </div>
           <div>
             <label class="lbl">Hasta</label>
-            <input type="date" id="repHasta">
+            <div class="dp-wrap"><input type="text" id="repHasta" placeholder="dd/mm/aaaa" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div>
           </div>
           <div>
             <label class="lbl">Estado</label>
@@ -2079,6 +2079,20 @@ function isValidDateDDMMYYYY(v) {
   return dt.getFullYear() === yy && dt.getMonth() === mm - 1 && dt.getDate() === dd;
 }
 function normalizeDateField(el) { if (!el) return; el.value = normalizeDateValue(el.value); }
+function currentTimeHHMMSS() { const n = new Date(); return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0') + ':' + String(n.getSeconds()).padStart(2,'0'); }
+async function validarPtsOrigen(el) {
+  const val = el.value.trim();
+  if (!val) return;
+  if (!/^\d+$/.test(val)) { showToast('⚠️ PTS Origen: ingrese solo el número de permiso.'); el.focus(); return; }
+  try {
+    const res = await fetch('/api/permisos/buscar/' + val, { credentials: 'same-origin' });
+    if (res.ok) {
+      const found = await res.json();
+      if (!found) { showToast('⚠️ PTS N° ' + val + ' no existe en el sistema.'); el.style.borderColor = 'var(--dusty-red)'; el.focus(); }
+      else { el.style.borderColor = ''; }
+    }
+  } catch(e) { console.warn('validarPtsOrigen error:', e); }
+}
 function ddmmyyyyToISO(v) {
   const m = String(v || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (m) return `${m[3]}-${m[2]}-${m[1]}`;
@@ -2342,7 +2356,7 @@ function startForm(tipo) {
         </div>
         <div class="fg f2">
           <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
-          <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado"></div>
+          <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado" onblur="validarPtsOrigen(this)"></div>
         </div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
       </div>
@@ -2364,7 +2378,7 @@ function startForm(tipo) {
       ${secHead('💥', 'Evaluación de Explosividad', 'orange-accent')}
       <div class="fsec-body">
         <div class="fg f3">
-          <div><label class="lbl">Hora</label><input type="time" id="cl_hora"></div>
+          <div><label class="lbl">Hora</label><input type="text" id="cl_hora" placeholder="HH:MM:SS" value="${currentTimeHHMMSS()}"></div>
           <div><label class="lbl">LEL (Explosividad)</label><input id="cl_lel" placeholder="Debe ser 0"></div>
           <div><label class="lbl">Responsable medición</label><input id="cl_lel_nom" placeholder="Nombre y Apellido"></div>
         </div>
@@ -2411,7 +2425,7 @@ function startForm(tipo) {
         </div>
         <div class="fg f2">
           <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
-          <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado"></div>
+          <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado" onblur="validarPtsOrigen(this)"></div>
         </div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
       </div>
@@ -2615,7 +2629,7 @@ function buildPreviewHTML(rec) {
       ${rec.term_firma ? `<div class="prev-row"><span class="prev-key">Firma Terminación</span><span class="prev-val">${rec.term_firma}</span></div>` : ''}
       ${rec.recep_emisor ? `<div class="prev-row"><span class="prev-key">Recepción Emisor</span><span class="prev-val">${rec.recep_emisor}</span></div>` : ''}
     </div></div>`;
-  } else if (rec.tipo === 'caliente' && cl) {
+  } else if (rec.tipo === 'caliente') { if (!cl) cl = {};
     html += `<div class="fsec"><div class="prev-sec-title" style="color:var(--amber-warm);border-left:3px solid var(--amber-warm)">📋 Datos Generales</div><div class="prev-body">
       <div class="prev-row"><span class="prev-key">Empresa / Proveedor</span><span class="prev-val">${rec.provNombre || '—'}</span></div>
       <div class="prev-row"><span class="prev-key">Fecha</span><span class="prev-val">${fmtDate(rec.fecha)}</span></div>
@@ -2638,7 +2652,7 @@ function buildPreviewHTML(rec) {
       <div class="prev-row"><span class="prev-key">Emisor</span><span class="prev-val">${cl.emisor_cl || rec.emisor || '—'}</span></div>
       <div class="prev-row"><span class="prev-key">Receptor</span><span class="prev-val">${cl.receptor_cl || '—'}</span></div>
     </div></div>`;
-  } else if (rec.tipo === 'altura' && cl) {
+  } else if (rec.tipo === 'altura') { if (!cl) cl = {};
     html += `<div class="fsec"><div class="prev-sec-title blue-t">📋 Datos Generales</div><div class="prev-body">
       <div class="prev-row"><span class="prev-key">Empresa / Proveedor</span><span class="prev-val">${rec.provNombre || '—'}</span></div>
       <div class="prev-row"><span class="prev-key">Fecha</span><span class="prev-val">${fmtDate(rec.fecha)}</span></div>
@@ -3110,15 +3124,15 @@ function renderReportPage() {
   renderVencimientos();
 }
 function renderReportTable() {
-  const desde = document.getElementById('repDesde')?.value;
-  const hasta = document.getElementById('repHasta')?.value;
+  const desde = ddmmyyyyToISO(document.getElementById('repDesde')?.value);
+  const hasta = ddmmyyyyToISO(document.getElementById('repHasta')?.value);
   const status = document.getElementById('repStatus')?.value;
   const tipo = document.getElementById('repTipo')?.value;
   let list = [...pts];
   if (status) list = list.filter(p => p.status === status);
   if (tipo) list = list.filter(p => p.tipo === tipo);
-  if (desde) list = list.filter(p => p.fecha >= desde);
-  if (hasta) list = list.filter(p => p.fecha <= hasta);
+  if (desde) list = list.filter(p => (p.fecha || '').slice(0, 10) >= desde);
+  if (hasta) list = list.filter(p => (p.fecha || '').slice(0, 10) <= hasta);
   const wrap = document.getElementById('reportTableWrap');
   if (!list.length) { wrap.innerHTML = `<div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">No hay registros para los filtros seleccionados</div>`; return; }
   wrap.innerHTML = `<div class="report-table-wrap">
