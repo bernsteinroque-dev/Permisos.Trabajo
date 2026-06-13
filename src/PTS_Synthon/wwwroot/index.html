@@ -3115,7 +3115,7 @@ function openProvDetail(id) {
   <div class="fsec">${secHead('📋', 'Formularios Registrados')}<div class="fsec-body">${ptsHtml}</div></div>
   <div style="display:flex;gap:10px;margin-bottom:12px">
     <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openProvForm(${p.id})">✏️ Editar Proveedor</button>
-    ${(role === 'admin') ? `<button class="btn" style="flex:1;justify-content:center;background:var(--dusty-red);color:#fff" onclick="bajaProveedor(${p.id},'${p.razon?.replace(/'/g, "\\'")}')">🗑️ Dar de Baja</button>` : ''}
+    <button class="btn" style="flex:1;justify-content:center;background:var(--dusty-red);color:#fff" onclick="bajaProveedor(${p.id},'${p.razon?.replace(/'/g, "\\'")}')">🗑️ Dar de Baja</button>
   </div>
   <div style="height:20px"></div>`;
   showPage('pageProvDetail');
