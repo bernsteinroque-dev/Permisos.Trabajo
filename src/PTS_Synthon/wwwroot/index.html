@@ -2509,7 +2509,13 @@ async function submitForm() {
   const provIdStr = g('f_prov');
   const provIdNum = parseInt(provIdStr) || null;
   const prov = proveedores.find(p => String(p.id) === String(provIdStr)) || null;
-  if (!prov || !prov.email) {
+  if (!prov) {
+    showToast('⚠️ Seleccioná un Proveedor antes de continuar');
+    const sel = document.getElementById('f_prov');
+    if (sel) { sel.style.borderColor = 'var(--dusty-red)'; sel.focus(); }
+    return;
+  }
+  if (!prov.email) {
     const ok = confirm('⚠️ El proveedor no tiene email registrado.\nPodrás ver el preview pero no enviar el correo automáticamente.\n¿Continuar?');
     if (!ok) return;
   }
