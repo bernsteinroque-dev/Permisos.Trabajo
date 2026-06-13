@@ -1468,8 +1468,8 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
     </div>
 
     <div class="login-field">
-      <label>Usuario de Dominio</label>
-      <input type="text" id="loginNombre" placeholder="Verificando autenticación..." autocomplete="off" readonly style="cursor:default;opacity:.9">
+      <label>Nombre y Apellido</label>
+      <input type="text" id="loginNombre" placeholder="Ej: Juan García" autocomplete="name" oninput="hideLoginWarning()">
       <div id="loginWarning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(180,30,30,.22);border:1.5px solid rgba(220,60,60,.55);border-radius:10px;align-items:flex-start;gap:10px;animation:scaleIn .25s cubic-bezier(.34,1.56,.64,1);">
         <span style="font-size:22px;flex-shrink:0">🚫</span>
         <div>
@@ -1819,31 +1819,25 @@ async function initAuth() {
     const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
     if (res.ok) {
       _windowsUser = await res.json();
-      if (_windowsUser && _windowsUser.role === 'denied') {
-        document.getElementById('loginNombre').value = _windowsUser.name || '';
-        showAccessDenied(_windowsUser.errorMessage || `El usuario '${_windowsUser.name}' no tiene permisos de acceso. Contacte al Administrador del Sistema.`);
-        return;
-      }
       if (_windowsUser && _windowsUser.isAuthenticated) {
-        document.getElementById('loginNombre').value = _windowsUser.name || '';
+        // Pre-fill the display name from Windows Auth
+        const inp = document.getElementById('loginNombre');
+        if (inp && !inp.value) inp.value = _windowsUser.name || '';
         hideLoginWarning();
-        const labels = { admin: 'Administrador del Sistema', supervisor: 'Supervisor', proveedor: 'Proveedor / Contratista', lectura: 'Solo Lectura' };
+        const labels = { admin: 'Administrador', supervisor: 'Supervisor', proveedor: 'Proveedor', lectura: 'Solo Lectura' };
         const note = document.getElementById('adRoleNote');
         const roleText = document.getElementById('adRoleText');
         if (note && roleText) {
-          roleText.textContent = `${_windowsUser.name} — ${labels[_windowsUser.role] || _windowsUser.role}`;
+          roleText.textContent = `${_windowsUser.windowsUser} — ${labels[_windowsUser.role] || _windowsUser.role}`;
           note.style.display = 'block';
         }
-      } else {
-        showAccessDenied('No fue posible autenticar al usuario. Verifique que su equipo esté conectado al dominio SYNTHON.');
+      } else if (_windowsUser && !_windowsUser.isAuthenticated) {
+        // Authenticated by Windows but no access rights
+        showAccessDenied(_windowsUser.errorMessage || 'El usuario no tiene permisos en esta aplicación. Contacte al Administrador del Sistema.');
       }
-    } else {
-      showAccessDenied('No fue posible autenticar al usuario. Verifique que su equipo esté conectado al dominio SYNTHON.');
     }
-  } catch (e) {
-    console.warn('Auth check failed:', e);
-    showAccessDenied('Error de conexión al verificar el usuario. Reintente o contacte al Administrador.');
-  }
+    // If res is not ok, just show the login form normally - Windows Auth will prompt for credentials
+  } catch (e) { console.warn('Auth check failed:', e); }
 }
 
 function showAccessDenied(msg) {
@@ -1871,19 +1865,29 @@ function selectRole(el, r) {
   _selectedRole = r;
 }
 function hideLoginWarning() {
-  // Only hide if it's a validation warning, not an access-denied block
-  if (_windowsUser?.isAuthenticated && _windowsUser?.role !== 'denied') {
-    const w = document.getElementById('loginWarning');
-    if (w) w.style.display = 'none';
-  }
+  const w = document.getElementById('loginWarning');
+  if (w) w.style.display = 'none';
 }
 async function doLogin() {
-  // Strict auth: must have a valid Windows authenticated user in a PTS group
-  if (!_windowsUser || !_windowsUser.isAuthenticated || _windowsUser.role === 'denied') {
-    showAccessDenied((_windowsUser?.errorMessage) || 'Acceso denegado. El usuario no está autenticado o no pertenece a ningún grupo de la aplicación.');
+  // Block if Windows Auth failed entirely
+  if (_windowsUser && !_windowsUser.isAuthenticated) {
+    showAccessDenied((_windowsUser?.errorMessage) || 'Acceso denegado. El usuario no tiene permisos en esta aplicación. Contacte al Administrador del Sistema.');
     return;
   }
-  currentUser = _windowsUser.name || _windowsUser.windowsUser || 'Usuario';
+  const nom = document.getElementById('loginNombre').value.trim();
+  if (!nom) {
+    const w = document.getElementById('loginWarning');
+    if (w) {
+      w.style.display = 'flex';
+      const titleEl = document.getElementById('loginWarnTitle');
+      const msgEl = document.getElementById('loginWarnMsg');
+      if (titleEl) titleEl.textContent = 'Campo requerido';
+      if (msgEl) msgEl.textContent = 'Debés ingresar tu Nombre y Apellido para continuar.';
+    }
+    document.getElementById('loginNombre').focus();
+    return;
+  }
+  currentUser = nom;
   currentCompany = _selectedCompany;
   role = _windowsUser?.role || _selectedRole;
 
@@ -1945,17 +1949,28 @@ async function loadPermisos(params = '') {
     const res = await fetch('/api/permisos' + (params ? '?' + params : ''), { credentials: 'same-origin' });
     if (res.ok) {
       pts = await res.json();
-      if (pts.length > 0) console.log('[PTS] Sample permit from API:', JSON.stringify(pts[0]));
+      console.log('[PTS] loadPermisos: loaded', pts.length, 'records');
+    } else {
+      const errText = await res.text().catch(() => '');
+      console.error('[PTS] loadPermisos failed:', res.status, errText);
+      showToast(`⚠️ Error ${res.status} al cargar permisos. Reintente o contacte al Administrador.`);
     }
-  } catch (e) { showToast('⚠️ Error al cargar permisos'); }
+  } catch (e) {
+    console.error('[PTS] loadPermisos exception:', e);
+    showToast('⚠️ Error de conexión al cargar permisos. Verifique la red.');
+  }
 }
 async function loadProveedores() {
   try {
     const res = await fetch('/api/proveedores', { credentials: 'same-origin' });
-    if (res.ok) { proveedores = await res.json(); }
-  } catch (e) { showToast('⚠️ Error al cargar proveedores'); }
+    if (res.ok) {
+      proveedores = await res.json();
+      console.log('[PTS] loadProveedores: loaded', proveedores.length, 'records');
+    } else {
+      console.error('[PTS] loadProveedores failed:', res.status);
+    }
+  } catch (e) { console.error('[PTS] loadProveedores exception:', e); }
 }
-
 /* ══════════════════════════════════════════════
    DATE PICKER
 ══════════════════════════════════════════════ */

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PTS_Synthon.Data;
 
 namespace PTS_Synthon.Controllers;
 
@@ -8,10 +10,36 @@ namespace PTS_Synthon.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _config;
+    private readonly AppDbContext _db;
 
-    public AuthController(IConfiguration config)
+    public AuthController(IConfiguration config, AppDbContext db)
     {
         _config = config;
+        _db = db;
+    }
+
+    [HttpGet("health")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Health()
+    {
+        try
+        {
+            var canConnect = await _db.Database.CanConnectAsync();
+            var permisosCount = canConnect ? await _db.Permisos.CountAsync() : -1;
+            var proveedoresCount = canConnect ? await _db.Proveedores.CountAsync() : -1;
+            return Ok(new
+            {
+                status = canConnect ? "ok" : "db_error",
+                database = canConnect,
+                permisos = permisosCount,
+                proveedores = proveedoresCount,
+                serverTime = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { status = "error", message = ex.Message });
+        }
     }
 
     [HttpGet("me")]
@@ -34,15 +62,16 @@ public class AuthController : ControllerBase
         }
 
         if (User.Identity == null || !User.Identity.IsAuthenticated)
-            return Unauthorized(new { isAuthenticated = false });
+            return Ok(new { isAuthenticated = false, role = "unauthenticated" });
 
         var adSettings = _config.GetSection("AdSettings");
         var adminGroup = adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins";
         var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
         var proveedorGroup = adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores";
         var lecturaGroup = adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura";
+        var defaultRole = adSettings.GetValue<string>("DefaultRole") ?? "admin";
 
-        string role = "denied";
+        string role = defaultRole;
         if (User.IsInRole(adminGroup)) role = "admin";
         else if (User.IsInRole(supervisorGroup)) role = "supervisor";
         else if (User.IsInRole(proveedorGroup)) role = "proveedor";
@@ -52,16 +81,6 @@ public class AuthController : ControllerBase
         var displayName = windowsUser.Contains('\\')
             ? windowsUser.Split('\\').Last()
             : windowsUser;
-
-        if (role == "denied")
-            return Ok(new
-            {
-                name = displayName,
-                windowsUser = windowsUser,
-                role = "denied",
-                isAuthenticated = false,
-                errorMessage = $"El usuario '{displayName}' no tiene permisos para acceder a esta aplicación. Contacte al administrador del sistema."
-            });
 
         return Ok(new
         {

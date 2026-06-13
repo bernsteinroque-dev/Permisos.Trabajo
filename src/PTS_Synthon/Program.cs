@@ -27,6 +27,22 @@ builder.Services.AddHostedService<VencimientoBackgroundService>();
 
 var app = builder.Build();
 
+// Ensure DB tables exist (creates schema if DB is empty or new)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+    try
+    {
+        db.Database.EnsureCreated();
+        logger.LogInformation("Database schema verified/created successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "CRITICAL: Database initialization failed. Check connection string and SQL Server availability.");
+    }
+}
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
