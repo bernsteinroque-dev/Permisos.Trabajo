@@ -2112,7 +2112,9 @@ async function validarPtsOrigen(el) {
       _setSubmitBlocked(true, 'PTS N° ' + val + ' no existe');
     } else {
       el.style.borderColor = '';
-      _setSubmitBlocked(false);
+      // Solo habilitar si también hay proveedor seleccionado
+      const provVal = g('f_prov');
+      if (provVal) _setSubmitBlocked(false);
     }
   } catch(e) {
     console.warn('validarPtsOrigen error:', e);
@@ -2212,7 +2214,27 @@ function secHead(ico, txt, cls = '') {
 }
 function provSelHtml(id) {
   const opts = proveedores.map(p => `<option value="${p.id}">${p.razon}</option>`).join('');
-  return `<select id="${id}" onchange="autoFillEmpresa(this.value)"><option value="">— Seleccionar proveedor —</option>${opts}</select>`;
+  return `<select id="${id}" onchange="autoFillEmpresa(this.value);onProveedorChange(this.value)"><option value="">— Seleccionar proveedor —</option>${opts}</select>`;
+}
+function onProveedorChange(val) {
+  const submitBtn = document.querySelector('.fact .btn-primary');
+  if (!submitBtn) return;
+  if (!val) {
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '.4';
+    submitBtn.style.cursor = 'not-allowed';
+    submitBtn.title = 'Seleccioná un proveedor para continuar';
+  } else {
+    // Solo habilitar si no hay otro bloqueo activo (ej: PTS Origen inválido)
+    const ptsOrig = document.getElementById('cl_pts_orig');
+    const ptsBlocked = ptsOrig && ptsOrig.style.borderColor === 'var(--dusty-red)';
+    if (!ptsBlocked) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
+      submitBtn.title = '';
+    }
+  }
 }
 function autoFillEmpresa(provId) {
   const prov = proveedores.find(p => String(p.id) === String(provId));
@@ -2492,10 +2514,10 @@ function startForm(tipo) {
 
   document.getElementById('fBody').innerHTML = html;
   showPage('pageForm');
-  // Bloquear envío hasta que PTS Origen sea validado (caliente y altura)
-  if (tipo === 'caliente' || tipo === 'altura') {
-    setTimeout(() => _setSubmitBlocked(true, 'Ingresá y validá el PTS Origen antes de continuar'), 50);
-  }
+  // Bloquear envío hasta seleccionar proveedor (siempre) y hasta validar PTS Origen (caliente/altura)
+  setTimeout(() => {
+    _setSubmitBlocked(true, 'Seleccioná un proveedor para continuar');
+  }, 50);
 }
 
 /* ══════════════════════════════════════════════
