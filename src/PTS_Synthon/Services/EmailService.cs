@@ -192,9 +192,9 @@ public class EmailService : IEmailService
                     }
 
                     // Verificaciones caliente
-                    if (cl.TryGetProperty("verifs", out var verifs) && verifs.ValueKind == JsonValueKind.Array)
+                    if (cl.TryGetProperty("verifs", out var clVerifs) && clVerifs.ValueKind == JsonValueKind.Array)
                     {
-                        var verifArr = verifs.EnumerateArray().Select(x => x.GetString() ?? "N/A").ToList();
+                        var verifArr = clVerifs.EnumerateArray().Select(x => x.GetString() ?? "N/A").ToList();
                         if (verifArr.Count > 0)
                         {
                             var verifRows = "";
