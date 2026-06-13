@@ -2805,16 +2805,16 @@ function openProvForm(editId) {
     ${secHead('📄', 'Documentación — Vencimientos', 'amber-accent')}
     <div class="fsec-body">
       <div class="fg f2">
-        <div><label class="lbl">ART</label><input type="date" id="pf_art" value="${v('art')}"></div>
-        <div><label class="lbl">Seguro RC</label><input type="date" id="pf_rc" value="${v('rc')}"></div>
+        <div><label class="lbl">ART</label><input type="text" id="pf_art" placeholder="dd/mm/aaaa" value="${fmtDate(v('art'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">Seguro RC</label><input type="text" id="pf_rc" placeholder="dd/mm/aaaa" value="${fmtDate(v('rc'))}" onblur="normalizeDateField(this)"></div>
       </div>
       <div class="fg f2">
-        <div><label class="lbl">Hab. Municipal</label><input type="date" id="pf_hab_venc" value="${v('hab_venc')}"></div>
-        <div><label class="lbl">Constancia AFIP</label><input type="date" id="pf_afip" value="${v('afip')}"></div>
+        <div><label class="lbl">Hab. Municipal</label><input type="text" id="pf_hab_venc" placeholder="dd/mm/aaaa" value="${fmtDate(v('hab_venc'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">Constancia AFIP</label><input type="text" id="pf_afip" placeholder="dd/mm/aaaa" value="${fmtDate(v('afip'))}" onblur="normalizeDateField(this)"></div>
       </div>
       <div class="fg f2">
-        <div><label class="lbl">Seguridad e Higiene</label><input type="date" id="pf_sih" value="${v('sih')}"></div>
-        <div><label class="lbl">Otros</label><input type="date" id="pf_otros" value="${v('otros')}"></div>
+        <div><label class="lbl">Seguridad e Higiene</label><input type="text" id="pf_sih" placeholder="dd/mm/aaaa" value="${fmtDate(v('sih'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">Otros</label><input type="text" id="pf_otros" placeholder="dd/mm/aaaa" value="${fmtDate(v('otros'))}" onblur="normalizeDateField(this)"></div>
       </div>
       <div class="fg f1"><label class="lbl">Observaciones documentación</label><textarea id="pf_obs_doc">${v('obs_doc')}</textarea></div>
     </div>
