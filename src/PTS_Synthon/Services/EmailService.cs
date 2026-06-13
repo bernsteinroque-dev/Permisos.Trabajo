@@ -82,6 +82,24 @@ public class EmailService : IEmailService
         "¿Se protegieron desagüas/cañerías para impedir emanación gaseosa?",
         "¿Se cuenta con un extintor en el lugar de trabajo?"
     ];
+    private static readonly string[] VerifAltAnd = [
+        "¿El andamio tiene la tarjeta verde correspondiente?",
+        "¿Visualmente, la estructura está en buenas condiciones?"
+    ];
+    private static readonly string[] VerifAltTec = [
+        "¿Los accesos a los techos son seguros?",
+        "¿Se tomaron precauciones para evitar la caída de objetos?",
+        "¿La zona debajo del trabajo está vallada?",
+        "¿Se tomaron precauciones para pisar sobre techo de chapa?"
+    ];
+    private static readonly string[] VerifAltEsc = [
+        "¿Es la adecuada para el uso que se le requiere?",
+        "¿Visualmente, está en buenas condiciones para su uso?",
+        "¿Posee zapatas antideslizantes?",
+        "¿Se fijó la parte superior?",
+        "Escalera doble: ¿posee traba o limitación de apertura?",
+        "En caso de usarse frente a portón o puerta, ¿están estas trabadas?"
+    ];
 
     public async Task SendNuevoPermisoAsync(Permiso permiso, string toEmail)
     {
@@ -148,6 +166,105 @@ public class EmailService : IEmailService
         if (epp != null && epp.Count > 0)
             rows += Section("EPP Adicional Requerido", "#d35400",
                 $"<tr><td colspan='2' style='padding:8px 10px;color:#3a2e1e;border-bottom:1px solid #ede8e0;'>{string.Join(" · ", epp)}</td></tr>");
+
+        // CheckList específico para caliente y altura
+        if (!string.IsNullOrEmpty(permiso.CheckListJson))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(permiso.CheckListJson);
+                var cl = doc.RootElement;
+
+                if (permiso.Tipo == "caliente")
+                {
+                    // PTS Origen
+                    var ptsOrig = cl.TryGetProperty("pts_orig", out var po) ? po.GetString() : null;
+                    if (!string.IsNullOrEmpty(ptsOrig))
+                        rows += Section("Check List — Datos del Permiso", tipoColor, Row("PTS Origen N°", ptsOrig));
+
+                    // Trabajos a realizar
+                    if (cl.TryGetProperty("trabajos", out var trabajos) && trabajos.ValueKind == JsonValueKind.Array)
+                    {
+                        var lista = trabajos.EnumerateArray().Select(x => x.GetString() ?? "").Where(s => s != "").ToList();
+                        if (lista.Count > 0)
+                            rows += Section("🛠️ Trabajos a Realizar", tipoColor,
+                                $"<tr><td colspan='2' style='padding:8px 10px;color:#3a2e1e;border-bottom:1px solid #ede8e0;'>{string.Join(" · ", lista)}</td></tr>");
+                    }
+
+                    // Verificaciones caliente
+                    if (cl.TryGetProperty("verifs", out var verifs) && verifs.ValueKind == JsonValueKind.Array)
+                    {
+                        var verifArr = verifs.EnumerateArray().Select(x => x.GetString() ?? "N/A").ToList();
+                        if (verifArr.Count > 0)
+                        {
+                            var verifRows = "";
+                            for (int i = 0; i < Math.Min(verifArr.Count, VerifCal.Length); i++)
+                            {
+                                var color = verifArr[i] == "SI" ? "#27ae60" : verifArr[i] == "NO" ? "#e74c3c" : "#888";
+                                verifRows += $"<tr><td style='padding:6px 10px;font-size:12px;color:#5a4a3a;border-bottom:1px solid #ede8e0;background:#faf7f3;'>{i+1}. {VerifCal[i]}</td><td style='padding:6px 10px;font-weight:700;color:{color};border-bottom:1px solid #ede8e0;'>{verifArr[i]}</td></tr>";
+                            }
+                            rows += Section("✅ Verificaciones Previas", tipoColor, verifRows);
+                        }
+                    }
+
+                    // Explosividad
+                    var hora = cl.TryGetProperty("hora", out var h) ? h.GetString() : null;
+                    var lel = cl.TryGetProperty("lel", out var l) ? l.GetString() : null;
+                    var lelNom = cl.TryGetProperty("lel_nom", out var ln) ? ln.GetString() : null;
+                    rows += Section("💥 Evaluación de Explosividad", tipoColor,
+                        Row("Hora", hora) + Row("LEL (Explosividad)", lel) + Row("Responsable medición", lelNom));
+
+                    // EPP caliente
+                    if (cl.TryGetProperty("epp", out var eppCl) && eppCl.ValueKind == JsonValueKind.Array)
+                    {
+                        var lista = eppCl.EnumerateArray().Select(x => x.GetString() ?? "").Where(s => s != "").ToList();
+                        if (lista.Count > 0)
+                            rows += Section("🦺 EPP Específico", tipoColor,
+                                $"<tr><td colspan='2' style='padding:8px 10px;color:#3a2e1e;border-bottom:1px solid #ede8e0;'>{string.Join(" · ", lista)}</td></tr>");
+                    }
+                }
+                else if (permiso.Tipo == "altura")
+                {
+                    var ptsOrig = cl.TryGetProperty("pts_orig", out var po) ? po.GetString() : null;
+                    if (!string.IsNullOrEmpty(ptsOrig))
+                        rows += Section("Check List — Datos del Permiso", tipoColor, Row("PTS Origen N°", ptsOrig));
+
+                    // Verificaciones andamios/techos/escaleras
+                    var secciones = new[] {
+                        ("andamios", "🏗️ Andamios", VerifAltAnd),
+                        ("techos",   "🏠 Techos",   VerifAltTec),
+                        ("escaleras","🪜 Escaleras", VerifAltEsc),
+                    };
+                    foreach (var (key, titulo, preguntas) in secciones)
+                    {
+                        if (cl.TryGetProperty(key, out var arr) && arr.ValueKind == JsonValueKind.Array)
+                        {
+                            var vals = arr.EnumerateArray().Select(x => x.GetString() ?? "N/A").ToList();
+                            if (vals.Count > 0)
+                            {
+                                var vRows = "";
+                                for (int i = 0; i < Math.Min(vals.Count, preguntas.Length); i++)
+                                {
+                                    var color = vals[i] == "SI" ? "#27ae60" : vals[i] == "NO" ? "#e74c3c" : "#888";
+                                    vRows += $"<tr><td style='padding:6px 10px;font-size:12px;color:#5a4a3a;border-bottom:1px solid #ede8e0;background:#faf7f3;'>{i+1}. {preguntas[i]}</td><td style='padding:6px 10px;font-weight:700;color:{color};border-bottom:1px solid #ede8e0;'>{vals[i]}</td></tr>";
+                                }
+                                rows += Section(titulo, tipoColor, vRows);
+                            }
+                        }
+                    }
+
+                    // EPP altura
+                    if (cl.TryGetProperty("epp", out var eppAlt) && eppAlt.ValueKind == JsonValueKind.Array)
+                    {
+                        var lista = eppAlt.EnumerateArray().Select(x => x.GetString() ?? "").Where(s => s != "").ToList();
+                        if (lista.Count > 0)
+                            rows += Section("🦺 EPP Específico", tipoColor,
+                                $"<tr><td colspan='2' style='padding:8px 10px;color:#3a2e1e;border-bottom:1px solid #ede8e0;'>{string.Join(" · ", lista)}</td></tr>");
+                    }
+                }
+            }
+            catch { /* si el JSON está malformado, ignorar */ }
+        }
 
         // Equipos / Controles (solo PTS)
         if (permiso.Tipo == "pts")
