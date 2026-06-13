@@ -1514,6 +1514,7 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
   <div class="topbar-company" id="topCompany">
     <div class="topbar-company-dot"></div>
     <span id="topCompanyName">—</span>
+    <span id="topUserName" style="margin-left:14px;opacity:.7;font-size:13px;border-left:1px solid rgba(255,255,255,.25);padding-left:14px;"></span>
   </div>
   <div class="topbar-nav">
     <button class="tnav-btn on" id="navPermisos" onclick="goSection('dash',this)">
@@ -1913,6 +1914,8 @@ function updateUserChip() {
   lbl.textContent = displayRole;
   chip.className = 'user-chip' + (isSupOrAdmin ? ' sup' : '');
   document.getElementById('topCompanyName').textContent = currentCompany;
+  const topUser = document.getElementById('topUserName');
+  if (topUser) topUser.textContent = currentUser ? `👤 ${currentUser}` : '';
   const canCreate = role === 'proveedor' || role === 'admin';
   document.getElementById('ctaBar').style.display = canCreate ? '' : 'none';
   renderList();
