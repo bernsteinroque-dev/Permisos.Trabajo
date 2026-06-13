@@ -2193,6 +2193,10 @@ function startForm(tipo) {
       ${secHead('📋', 'Datos Generales — SOP.AR01.PR.251 (6.0)', 'red-accent')}
       <div class="fsec-body">
         <div class="fg f2">
+          <div><label class="lbl">N° Permiso de Trabajo</label><input id="f_nro_display" value="Se asigna al guardar" readonly style="background:#f5efe6;color:#b08d57;font-weight:700;font-size:15px;cursor:default"></div>
+          <div><label class="lbl">Empresa / Planta</label><input value="${currentCompany}" readonly style="background:#f5efe6;cursor:default"></div>
+        </div>
+        <div class="fg f2">
           <div><label class="lbl">Proveedor</label>${provSelHtml('f_prov')}</div>
           <div><label class="lbl">Empresa</label><input id="f_empresa" placeholder="Se completa al seleccionar proveedor"></div>
         </div>
@@ -2499,7 +2503,10 @@ async function submitForm() {
     if (!res.ok) throw new Error('Error ' + res.status);
     const saved = await res.json();
     pts.unshift(saved);
-    document.getElementById('fNo').textContent = 'N° ' + (saved.no || '---');
+    const nro = saved.no || '---';
+    document.getElementById('fNo').textContent = 'N° ' + nro;
+    const nroField = document.getElementById('f_nro_display');
+    if (nroField) nroField.value = 'N° ' + nro;
     updateStats();
     showPreview(saved);
   } catch (e) {
@@ -2517,7 +2524,7 @@ function vpill(v) { const cls = v === 'SI' ? 'vp-si' : v === 'NO' ? 'vp-no' : 'v
 function chip(txt, cls) { return `<span class="chip ${cls}">${txt}</span>`; }
 
 function buildPreviewHTML(rec) {
-  const t = TIPOS[rec.tipo];
+  const t = TIPOS[rec.tipo] || { label: rec.tipo || '—', icon: '📋', color: 'var(--terra)', bg: 'var(--terra-soft)', icoClass: 'ico-pts' };
   const statusColor = rec.status === 'approved' ? 'var(--sage)' : rec.status === 'rejected' ? 'var(--dusty-red)' : 'var(--gold)';
   const statusLabel = rec.status === 'approved' ? '✅ APROBADO' : rec.status === 'rejected' ? '❌ RECHAZADO' : '⏳ PENDIENTE';
   let html = `<div class="prev-doc-hdr">
