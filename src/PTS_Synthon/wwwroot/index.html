@@ -1936,7 +1936,10 @@ function toggleRole() {
 async function loadPermisos(params = '') {
   try {
     const res = await fetch('/api/permisos' + (params ? '?' + params : ''), { credentials: 'same-origin' });
-    if (res.ok) { pts = await res.json(); }
+    if (res.ok) {
+      pts = await res.json();
+      if (pts.length > 0) console.log('[PTS] Sample permit from API:', JSON.stringify(pts[0]));
+    }
   } catch (e) { showToast('⚠️ Error al cargar permisos'); }
 }
 async function loadProveedores() {
@@ -2741,7 +2744,8 @@ async function searchByNumber() {
   filterBySearch(val);
 }
 function openDetailFromData(p) {
-  const t = TIPOS[p.tipo];
+  console.log('[PTS] openDetailFromData:', JSON.stringify(p));
+  const t = TIPOS[p.tipo] || { label: p.tipo || '—', icon: '📋', color: 'var(--terra)', bg: 'var(--terra-soft)', icoClass: 'ico-pts' };
   const sn = { pending: '⏳ Pendiente', approved: '✅ Aprobado', rejected: '❌ Rechazado' };
   const sc = { pending: 'var(--gold)', approved: 'var(--sage)', rejected: 'var(--dusty-red)' };
   document.getElementById('dtTitle').textContent = `N° ${p.no} — ${t.label}`;
@@ -2790,7 +2794,7 @@ function renderFilteredList(list) {
     return;
   }
   c.innerHTML = list.map((p, i) => {
-    const t = TIPOS[p.tipo];
+    const t = TIPOS[p.tipo] || { label: p.tipo || '—', icon: '📋', icoClass: 'ico-pts' };
     const [bsc, bsl] = p.status === 'pending' ? ['bs-pend', 'Pendiente'] : p.status === 'approved' ? ['bs-apro', 'Aprobado'] : ['bs-rech', 'Rechazado'];
     return `<div class="pcard" style="animation-delay:${i * 0.05}s" onclick="openDetail(${p.id})">
       <div class="pcard-inner">
