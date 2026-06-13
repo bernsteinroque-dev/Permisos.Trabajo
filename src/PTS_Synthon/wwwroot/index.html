@@ -2080,19 +2080,45 @@ function isValidDateDDMMYYYY(v) {
 }
 function normalizeDateField(el) { if (!el) return; el.value = normalizeDateValue(el.value); }
 function currentTimeHHMMSS() { const n = new Date(); return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0') + ':' + String(n.getSeconds()).padStart(2,'0'); }
+function _setSubmitBlocked(blocked, msg) {
+  const btn = document.querySelector('.fact .btn-primary');
+  if (!btn) return;
+  if (blocked) {
+    btn.disabled = true;
+    btn.style.opacity = '.4';
+    btn.style.cursor = 'not-allowed';
+    btn.title = msg || 'Corregí el PTS Origen antes de continuar';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.title = '';
+  }
+}
 async function validarPtsOrigen(el) {
   const val = el.value.trim();
-  if (!val) return;
-  if (!/^\d+$/.test(val)) { showToast('⚠️ PTS Origen: ingresá solo el número de permiso.'); el.style.borderColor = 'var(--dusty-red)'; el.focus(); return; }
+  if (!val) { _setSubmitBlocked(true, 'El campo PTS Origen es obligatorio'); el.style.borderColor = 'var(--dusty-red)'; return; }
+  if (!/^\d+$/.test(val)) {
+    showToast('⚠️ PTS Origen: ingresá solo el número de permiso.');
+    el.style.borderColor = 'var(--dusty-red)';
+    _setSubmitBlocked(true, 'PTS Origen inválido');
+    return;
+  }
   try {
     const res = await fetch('/api/permisos/buscar/' + val, { credentials: 'same-origin' });
     if (!res.ok) {
-      showToast('⚠️ PTS N° ' + val + ' no existe en el sistema.');
+      showToast('❌ PTS N° ' + val + ' no existe en el sistema. No se puede continuar.');
       el.style.borderColor = 'var(--dusty-red)';
+      _setSubmitBlocked(true, 'PTS N° ' + val + ' no existe');
     } else {
       el.style.borderColor = '';
+      _setSubmitBlocked(false);
     }
-  } catch(e) { console.warn('validarPtsOrigen error:', e); }
+  } catch(e) {
+    console.warn('validarPtsOrigen error:', e);
+    showToast('⚠️ No se pudo verificar el PTS Origen.');
+    _setSubmitBlocked(true, 'Error al verificar PTS Origen');
+  }
 }
 function ddmmyyyyToISO(v) {
   const m = String(v || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -2466,6 +2492,10 @@ function startForm(tipo) {
 
   document.getElementById('fBody').innerHTML = html;
   showPage('pageForm');
+  // Bloquear envío hasta que PTS Origen sea validado (caliente y altura)
+  if (tipo === 'caliente' || tipo === 'altura') {
+    setTimeout(() => _setSubmitBlocked(true, 'Ingresá y validá el PTS Origen antes de continuar'), 50);
+  }
 }
 
 /* ══════════════════════════════════════════════
