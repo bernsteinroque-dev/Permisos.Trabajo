@@ -15,12 +15,14 @@ public class PermisosController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
+    private readonly ILogger<PermisosController> _logger;
 
-    public PermisosController(AppDbContext db, IEmailService email, IConfiguration config)
+    public PermisosController(AppDbContext db, IEmailService email, IConfiguration config, ILogger<PermisosController> logger)
     {
         _db = db;
         _email = email;
         _config = config;
+        _logger = logger;
     }
 
     private string GetCurrentUser()
@@ -254,8 +256,23 @@ public class PermisosController : ControllerBase
         var p = await _db.Permisos.FindAsync(id);
         if (p == null) return NotFound();
 
+        var errors = new List<string>();
+
         var supervisorEmail = _config.GetValue<string>("NotificacionSettings:SupervisorEmail") ?? "";
-        await _email.SendNuevoPermisoAsync(p, supervisorEmail);
+        if (!string.IsNullOrEmpty(supervisorEmail))
+        {
+            try { await _email.SendNuevoPermisoAsync(p, supervisorEmail); }
+            catch (Exception ex) { errors.Add($"Supervisor: {ex.Message}"); _logger.LogError(ex, "Error sending email to supervisor"); }
+        }
+
+        if (!string.IsNullOrEmpty(p.ProveedorEmail))
+        {
+            try { await _email.SendNuevoPermisoAsync(p, p.ProveedorEmail); }
+            catch (Exception ex) { errors.Add($"Proveedor: {ex.Message}"); _logger.LogError(ex, "Error sending email to proveedor"); }
+        }
+
+        if (errors.Any()) return StatusCode(500, new { errors });
+
         p.EmailNotificado = true;
         await _db.SaveChangesAsync();
         return Ok(new { sent = true });

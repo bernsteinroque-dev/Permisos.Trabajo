@@ -2197,12 +2197,12 @@ function startForm(tipo) {
           <div><label class="lbl">Empresa</label><input id="f_empresa" placeholder="Se completa al seleccionar proveedor"></div>
         </div>
         <div class="fg f2">
-          <div><label class="lbl">Fecha (dd/mm/aaaa)</label><input id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" onblur="normalizeDateField(this)"></div>
+          <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
           <div><label class="lbl">Orden / Pedido N°</label><input id="f_orden" placeholder="N° de orden"></div>
         </div>
         <div class="fg f2">
-          <div><label class="lbl">Vigencia Desde (dd/mm/aaaa)</label><input id="f_desde" placeholder="dd/mm/aaaa" value="${todayDisplay()}" onblur="normalizeDateField(this)"></div>
-          <div><label class="lbl">Vigencia Hasta (dd/mm/aaaa)</label><input id="f_hasta" placeholder="dd/mm/aaaa" value="${todayDisplay()}" onblur="normalizeDateField(this)"></div>
+          <div><label class="lbl">Vigencia Desde</label><div class="dp-wrap"><input type="text" id="f_desde" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
+          <div><label class="lbl">Vigencia Hasta</label><div class="dp-wrap"><input type="text" id="f_hasta" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
         </div>
         <div class="fg f2">
           <div><label class="lbl">Planta / Sector</label><input id="f_planta" placeholder="Sector / área de trabajo"></div>
@@ -2235,9 +2235,9 @@ function startForm(tipo) {
       ${secHead('🔧', 'Equipos / Controles', 'red-accent')}
       <div class="fsec-body">
         <div class="fg f3">
-          <div><label class="lbl">Herramienta antichispa</label><input id="f_anti" placeholder="SI / NO / N/A"></div>
-          <div><label class="lbl">Iluminación especial</label><input id="f_ilum" placeholder="SI / NO / N/A"></div>
-          <div><label class="lbl">Genera residuos</label><input id="f_resi" placeholder="SI / NO / N/A"></div>
+          <div><label class="lbl">Herramienta antichispa</label><select id="f_anti"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option><option>N/A</option></select></div>
+          <div><label class="lbl">Iluminación especial</label><select id="f_ilum"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option><option>N/A</option></select></div>
+          <div><label class="lbl">Genera residuos</label><select id="f_resi"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option><option>N/A</option></select></div>
         </div>
       </div>
     </div>
@@ -2245,7 +2245,7 @@ function startForm(tipo) {
       ${secHead('⚙️', 'Consignaciones', 'amber-accent')}
       <div class="fsec-body">
         <div class="fg f3">
-          <div><label class="lbl">¿Se consignó?</label><input id="f_cons" placeholder="SI / NO / N/A"></div>
+          <div><label class="lbl">¿Se consignó?</label><select id="f_cons"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option><option>N/A</option></select></div>
           <div><label class="lbl">¿Cuál?</label><input id="f_cons_c" placeholder="Tipo de consignación"></div>
           <div><label class="lbl">¿Quién consignó?</label><input id="f_cons_q" placeholder="Nombre y Apellido"></div>
         </div>
@@ -2312,7 +2312,7 @@ function startForm(tipo) {
           <div><label class="lbl">Empresa</label><input id="f_empresa" placeholder="Nombre empresa"></div>
         </div>
         <div class="fg f2">
-          <div><label class="lbl">Fecha (dd/mm/aaaa)</label><input id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" onblur="normalizeDateField(this)"></div>
+          <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
           <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado"></div>
         </div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
@@ -2381,7 +2381,7 @@ function startForm(tipo) {
           <div><label class="lbl">Empresa</label><input id="f_empresa" placeholder="Nombre empresa"></div>
         </div>
         <div class="fg f2">
-          <div><label class="lbl">Fecha (dd/mm/aaaa)</label><input id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" onblur="normalizeDateField(this)"></div>
+          <div><label class="lbl">Fecha</label><div class="dp-wrap"><input type="text" id="f_fecha" placeholder="dd/mm/aaaa" value="${todayDisplay()}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
           <div><label class="lbl">PTS Origen N°</label><input id="cl_pts_orig" placeholder="N° del PTS asociado"></div>
         </div>
         <div class="fg f1"><label class="lbl">Descripción del Trabajo *</label><textarea id="f_desc" placeholder="Describí el trabajo..."></textarea></div>
@@ -2499,6 +2499,7 @@ async function submitForm() {
     if (!res.ok) throw new Error('Error ' + res.status);
     const saved = await res.json();
     pts.unshift(saved);
+    document.getElementById('fNo').textContent = 'N° ' + (saved.no || '---');
     updateStats();
     showPreview(saved);
   } catch (e) {
@@ -2675,7 +2676,11 @@ async function doSendEmail() {
   try {
     const res = await fetch(`/api/permisos/${rec.id}/email`, { method: 'POST', credentials: 'same-origin' });
     if (res.ok) { showToast(`✅ Email enviado`); }
-    else throw new Error('Error ' + res.status);
+    else {
+      let msg = 'Error ' + res.status;
+      try { const body = await res.json(); if (body.errors) msg = body.errors.join(' | '); } catch {}
+      throw new Error(msg);
+    }
   } catch {
     const ok = confirm('⚠️ No se pudo conectar con el servidor de correo.\n\n¿Querés copiar el texto del email?');
     if (ok) copyEmail();
