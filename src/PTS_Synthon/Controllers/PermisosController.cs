@@ -45,7 +45,8 @@ public class PermisosController : ControllerBase
         if (User.IsInRole(adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins")) return "admin";
         if (User.IsInRole(adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores")) return "supervisor";
         if (User.IsInRole(adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores")) return "proveedor";
-        return adSettings.GetValue<string>("DefaultRole") ?? "lectura";
+        if (User.IsInRole(adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura")) return "lectura";
+        return "denied";
     }
 
     [HttpGet]

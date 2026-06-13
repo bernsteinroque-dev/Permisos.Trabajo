@@ -40,16 +40,28 @@ public class AuthController : ControllerBase
         var adminGroup = adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins";
         var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
         var proveedorGroup = adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores";
+        var lecturaGroup = adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura";
 
-        string role = adSettings.GetValue<string>("DefaultRole") ?? "lectura";
+        string role = "denied";
         if (User.IsInRole(adminGroup)) role = "admin";
         else if (User.IsInRole(supervisorGroup)) role = "supervisor";
         else if (User.IsInRole(proveedorGroup)) role = "proveedor";
+        else if (User.IsInRole(lecturaGroup)) role = "lectura";
 
         var windowsUser = User.Identity.Name ?? string.Empty;
         var displayName = windowsUser.Contains('\\')
             ? windowsUser.Split('\\').Last()
             : windowsUser;
+
+        if (role == "denied")
+            return Ok(new
+            {
+                name = displayName,
+                windowsUser = windowsUser,
+                role = "denied",
+                isAuthenticated = false,
+                errorMessage = $"El usuario '{displayName}' no tiene permisos para acceder a esta aplicación. Contacte al administrador del sistema."
+            });
 
         return Ok(new
         {
