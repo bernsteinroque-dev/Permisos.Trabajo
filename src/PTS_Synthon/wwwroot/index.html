@@ -944,6 +944,28 @@ input:focus, select:focus, textarea:focus {
 }
 select { cursor: pointer; }
 textarea { resize: vertical; min-height: 76px; }
+/* ── Date Picker ── */
+.dp-wrap { position: relative; }
+.dp-popup {
+  display: none; position: absolute; z-index: 9999; top: calc(100% + 4px); left: 0;
+  background: #fff; border: 1.5px solid #c8bdb5; border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18); padding: 10px; min-width: 230px;
+}
+.dp-popup.open { display: block; }
+.dp-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.dp-hdr button { background: none; border: none; cursor: pointer; font-size: 18px; color: #b08d57; padding: 2px 6px; border-radius: 4px; }
+.dp-hdr button:hover { background: #f5efe6; }
+.dp-hdr span { font-weight: 700; font-size: 14px; color: #3a2e1e; }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dp-dow { text-align: center; font-size: 11px; font-weight: 700; color: #b08d57; padding: 2px 0; }
+.dp-day {
+  text-align: center; font-size: 13px; padding: 5px 2px; border-radius: 5px;
+  cursor: pointer; color: #3a2e1e;
+}
+.dp-day:hover { background: #f5efe6; }
+.dp-day.today { font-weight: 700; color: #b08d57; }
+.dp-day.selected { background: #b08d57; color: #fff; }
+.dp-day.empty { cursor: default; }
 input::placeholder, textarea::placeholder { color: #c8bdb5; }
 
 /* ═══════════════════════════════════════════════════════
@@ -1922,6 +1944,86 @@ async function loadProveedores() {
 }
 
 /* ══════════════════════════════════════════════
+   DATE PICKER
+══════════════════════════════════════════════ */
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let _dpActive = null;
+
+function dpOpen(inputEl) {
+  dpClose();
+  const wrap = inputEl.closest('.dp-wrap');
+  if (!wrap) return;
+  const popup = wrap.querySelector('.dp-popup');
+  if (!popup) return;
+
+  const raw = inputEl.value;
+  let cur = new Date(); cur.setDate(1);
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [d, m, y] = raw.split('/');
+    cur = new Date(+y, +m - 1, 1);
+  }
+  popup._year = cur.getFullYear();
+  popup._month = cur.getMonth();
+  popup._input = inputEl;
+  dpRender(popup);
+  popup.classList.add('open');
+  _dpActive = popup;
+  setTimeout(() => document.addEventListener('click', dpOutside), 0);
+}
+
+function dpClose() {
+  if (_dpActive) { _dpActive.classList.remove('open'); _dpActive = null; }
+  document.removeEventListener('click', dpOutside);
+}
+
+function dpOutside(e) {
+  if (_dpActive && !_dpActive.closest('.dp-wrap').contains(e.target)) dpClose();
+}
+
+function dpNav(popup, delta) {
+  popup._month += delta;
+  if (popup._month > 11) { popup._month = 0; popup._year++; }
+  if (popup._month < 0)  { popup._month = 11; popup._year--; }
+  dpRender(popup);
+}
+
+function dpRender(popup) {
+  const y = popup._year, m = popup._month;
+  const todayStr = new Date().toISOString().slice(0,10);
+  const raw = popup._input?.value || '';
+  let selD = 0, selM = -1, selY = 0;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) { [selD, selM, selY] = raw.split('/').map(Number); selM--; }
+
+  const first = new Date(y, m, 1).getDay(); // 0=Sun
+  const dow = (first === 0) ? 6 : first - 1; // Mon-start
+  const days = new Date(y, m + 1, 0).getDate();
+
+  let html = `<div class="dp-hdr">
+    <button onclick="dpNav(this.closest('.dp-popup'),- 1)">‹</button>
+    <span>${MESES[m]} ${y}</span>
+    <button onclick="dpNav(this.closest('.dp-popup'), 1)">›</button>
+  </div><div class="dp-grid">`;
+  for (const d of ['Lu','Ma','Mi','Ju','Vi','Sá','Do']) html += `<div class="dp-dow">${d}</div>`;
+  for (let i = 0; i < dow; i++) html += `<div class="dp-empty dp-day"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const isoD = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = isoD === todayStr;
+    const isSel = d === selD && m === selM && y === selY;
+    html += `<div class="dp-day${isToday?' today':''}${isSel?' selected':''}" onclick="dpSelect(this.closest('.dp-popup'),${d})">${d}</div>`;
+  }
+  html += '</div>';
+  popup.innerHTML = html;
+}
+
+function dpSelect(popup, day) {
+  const m = String(popup._month + 1).padStart(2, '0');
+  const d = String(day).padStart(2, '0');
+  const y = popup._year;
+  if (popup._input) popup._input.value = `${d}/${m}/${y}`;
+  dpClose();
+}
+
+/* ══════════════════════════════════════════════
    DATE HELPERS
 ══════════════════════════════════════════════ */
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -2808,16 +2910,16 @@ function openProvForm(editId) {
     ${secHead('📄', 'Documentación — Vencimientos', 'amber-accent')}
     <div class="fsec-body">
       <div class="fg f2">
-        <div><label class="lbl">ART</label><input type="text" id="pf_art" placeholder="dd/mm/aaaa" value="${fmtDate(v('art'))}" onblur="normalizeDateField(this)"></div>
-        <div><label class="lbl">Seguro RC</label><input type="text" id="pf_rc" placeholder="dd/mm/aaaa" value="${fmtDate(v('rc'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">ART</label><div class="dp-wrap"><input type="text" id="pf_art" placeholder="dd/mm/aaaa" value="${fmtDate(v('art'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
+        <div><label class="lbl">Seguro RC</label><div class="dp-wrap"><input type="text" id="pf_rc" placeholder="dd/mm/aaaa" value="${fmtDate(v('rc'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
       </div>
       <div class="fg f2">
-        <div><label class="lbl">Hab. Municipal</label><input type="text" id="pf_hab_venc" placeholder="dd/mm/aaaa" value="${fmtDate(v('hab_venc'))}" onblur="normalizeDateField(this)"></div>
-        <div><label class="lbl">Constancia AFIP</label><input type="text" id="pf_afip" placeholder="dd/mm/aaaa" value="${fmtDate(v('afip'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">Hab. Municipal</label><div class="dp-wrap"><input type="text" id="pf_hab_venc" placeholder="dd/mm/aaaa" value="${fmtDate(v('hab_venc'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
+        <div><label class="lbl">Constancia AFIP</label><div class="dp-wrap"><input type="text" id="pf_afip" placeholder="dd/mm/aaaa" value="${fmtDate(v('afip'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
       </div>
       <div class="fg f2">
-        <div><label class="lbl">Seguridad e Higiene</label><input type="text" id="pf_sih" placeholder="dd/mm/aaaa" value="${fmtDate(v('sih'))}" onblur="normalizeDateField(this)"></div>
-        <div><label class="lbl">Otros</label><input type="text" id="pf_otros" placeholder="dd/mm/aaaa" value="${fmtDate(v('otros'))}" onblur="normalizeDateField(this)"></div>
+        <div><label class="lbl">Seguridad e Higiene</label><div class="dp-wrap"><input type="text" id="pf_sih" placeholder="dd/mm/aaaa" value="${fmtDate(v('sih'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
+        <div><label class="lbl">Otros</label><div class="dp-wrap"><input type="text" id="pf_otros" placeholder="dd/mm/aaaa" value="${fmtDate(v('otros'))}" readonly onfocus="dpOpen(this)" onclick="dpOpen(this)"><div class="dp-popup"></div></div></div>
       </div>
       <div class="fg f1"><label class="lbl">Observaciones documentación</label><textarea id="pf_obs_doc">${v('obs_doc')}</textarea></div>
     </div>

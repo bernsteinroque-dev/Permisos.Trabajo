@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
         var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
         var proveedorGroup = adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores";
 
-        string role = "lectura";
+        string role = adSettings.GetValue<string>("DefaultRole") ?? "lectura";
         if (User.IsInRole(adminGroup)) role = "admin";
         else if (User.IsInRole(supervisorGroup)) role = "supervisor";
         else if (User.IsInRole(proveedorGroup)) role = "proveedor";
