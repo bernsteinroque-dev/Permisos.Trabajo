@@ -2483,6 +2483,23 @@ async function submitForm() {
     if (!ok) return;
   }
 
+  // Validar PTS Origen obligatorio para caliente y altura
+  if (currentTipo === 'caliente' || currentTipo === 'altura') {
+    const ptsOrigVal = g('cl_pts_orig').trim();
+    if (!ptsOrigVal) { showToast('⚠️ Ingresá el N° de PTS Origen'); document.getElementById('cl_pts_orig')?.focus(); return; }
+    if (!/^\d+$/.test(ptsOrigVal)) { showToast('⚠️ PTS Origen: ingresá solo el número'); document.getElementById('cl_pts_orig')?.focus(); return; }
+    try {
+      const chk = await fetch('/api/permisos/buscar/' + ptsOrigVal, { credentials: 'same-origin' });
+      const found = chk.ok ? await chk.json() : null;
+      if (!found) {
+        showToast('❌ PTS N° ' + ptsOrigVal + ' no existe. Verificá el número antes de continuar.');
+        const el = document.getElementById('cl_pts_orig');
+        if (el) { el.style.borderColor = 'var(--dusty-red)'; el.focus(); }
+        return;
+      }
+    } catch(e) { showToast('⚠️ No se pudo verificar el PTS Origen. Intentá nuevamente.'); return; }
+  }
+
   let cl = null;
   if (currentTipo === 'caliente') {
     cl = { pts_orig: g('cl_pts_orig'), trabajos: [..._tra_cal], verifs: VERIF_CAL.map((_, i) => _vs['c' + i] || 'N/A'), hora: g('cl_hora'), lel: g('cl_lel'), lel_nom: g('cl_lel_nom'), epp: [..._epp_cal], extincion: [..._extincion], obs: g('cl_obs'), emisor_cl: g('f_emisor'), receptor_cl: g('cl_receptor'), emi_fecha: g('cl_emi_fecha'), rec_fecha: g('cl_rec_fecha') };
@@ -3096,9 +3113,29 @@ function openProvDetail(id) {
   </div></div>
   ${p.obs ? `<div class="fsec">${secHead('📝', 'Observaciones')}<div class="fsec-body"><p style="font-size:13px;color:var(--ink2)">${p.obs}</p></div></div>` : ''}
   <div class="fsec">${secHead('📋', 'Formularios Registrados')}<div class="fsec-body">${ptsHtml}</div></div>
-  <button class="btn btn-primary btn-full" style="margin-bottom:12px" onclick="openProvForm(${p.id})">✏️ Editar Proveedor</button>
+  <div style="display:flex;gap:10px;margin-bottom:12px">
+    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openProvForm(${p.id})">✏️ Editar Proveedor</button>
+    ${(role === 'admin') ? `<button class="btn" style="flex:1;justify-content:center;background:var(--dusty-red);color:#fff" onclick="bajaProveedor(${p.id},'${p.razon?.replace(/'/g, "\\'")}')">🗑️ Dar de Baja</button>` : ''}
+  </div>
   <div style="height:20px"></div>`;
   showPage('pageProvDetail');
+}
+
+async function bajaProveedor(id, razon) {
+  if (!confirm(`⚠️ ¿Confirma la BAJA del proveedor "${razon}"?\n\nEsta acción no se puede deshacer.`)) return;
+  try {
+    const res = await fetch('/api/proveedores/' + id, { method: 'DELETE', credentials: 'same-origin' });
+    if (res.ok || res.status === 204) {
+      proveedores = proveedores.filter(p => p.id !== id);
+      showToast('✅ Proveedor dado de baja correctamente');
+      showPage('pageProveedores');
+      renderProvList();
+    } else if (res.status === 403) {
+      showToast('❌ No tenés permisos para dar de baja proveedores');
+    } else {
+      showToast('❌ Error al dar de baja el proveedor');
+    }
+  } catch(e) { showToast('❌ Error de conexión al dar de baja'); }
 }
 
 /* ══════════════════════════════════════════════

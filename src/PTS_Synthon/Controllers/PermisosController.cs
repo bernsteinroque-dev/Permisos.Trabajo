@@ -220,7 +220,7 @@ public class PermisosController : ControllerBase
 
         if (!string.IsNullOrEmpty(existing.ProveedorEmail))
         {
-            try { await _email.SendPermisoAprobadoAsync(existing); } catch { }
+            try { await _email.SendNuevoPermisoAsync(existing, existing.ProveedorEmail); } catch { }
         }
 
         return Ok(existing);
