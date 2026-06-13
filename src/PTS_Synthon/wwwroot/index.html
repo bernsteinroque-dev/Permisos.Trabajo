@@ -1803,7 +1803,7 @@ document.body.classList.add('login-active');
 ══════════════════════════════════════════════ */
 async function initAuth() {
   try {
-    const res = await fetch('/api/auth/me');
+    const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
     if (res.ok) {
       _windowsUser = await res.json();
       if (_windowsUser && _windowsUser.isAuthenticated) {
@@ -1910,13 +1910,13 @@ function toggleRole() {
 ══════════════════════════════════════════════ */
 async function loadPermisos(params = '') {
   try {
-    const res = await fetch('/api/permisos' + (params ? '?' + params : ''));
+    const res = await fetch('/api/permisos' + (params ? '?' + params : ''), { credentials: 'same-origin' });
     if (res.ok) { pts = await res.json(); }
   } catch (e) { showToast('⚠️ Error al cargar permisos'); }
 }
 async function loadProveedores() {
   try {
-    const res = await fetch('/api/proveedores');
+    const res = await fetch('/api/proveedores', { credentials: 'same-origin' });
     if (res.ok) { proveedores = await res.json(); }
   } catch (e) { showToast('⚠️ Error al cargar proveedores'); }
 }
@@ -1926,7 +1926,7 @@ async function loadProveedores() {
 ══════════════════════════════════════════════ */
 function today() { return new Date().toISOString().slice(0, 10); }
 function fmtDate(s) {
-  if (!s || s === '—' || s === '') return '—';
+  if (!s || s === '—' || s === '') return '';
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; }
   return s;
@@ -2386,6 +2386,7 @@ async function submitForm() {
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Guardando...'; }
 
     const res = await fetch('/api/permisos', {
+      credentials: 'same-origin',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rec)
@@ -2567,7 +2568,7 @@ async function doSendEmail() {
   const btn = document.getElementById('btnSend');
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
   try {
-    const res = await fetch(`/api/permisos/${rec.id}/email`, { method: 'POST' });
+    const res = await fetch(`/api/permisos/${rec.id}/email`, { method: 'POST', credentials: 'same-origin' });
     if (res.ok) { showToast(`✅ Email enviado`); }
     else throw new Error('Error ' + res.status);
   } catch {
@@ -2607,7 +2608,7 @@ async function searchByNumber() {
   if (!val) { renderList(); return; }
   if (/^\d+$/.test(val)) {
     try {
-      const res = await fetch(`/api/permisos/buscar/${encodeURIComponent(val)}`);
+      const res = await fetch(`/api/permisos/buscar/${encodeURIComponent(val)}`, { credentials: 'same-origin' });
       if (res.ok) {
         const result = await res.json();
         if (result && result.id) {
@@ -2726,6 +2727,7 @@ async function aprobar(id) {
   if (!nom) { showToast('⚠️ Ingresá el nombre del supervisor'); return; }
   try {
     const res = await fetch(`/api/permisos/${id}/aprobar`, {
+      credentials: 'same-origin',
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ supervisorNombre: nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
@@ -2746,6 +2748,7 @@ async function rechazar(id) {
   if (!nom) { showToast('⚠️ Ingresá el nombre del supervisor'); return; }
   try {
     const res = await fetch(`/api/permisos/${id}/rechazar`, {
+      credentials: 'same-origin',
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ supervisorNombre: nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
@@ -2851,7 +2854,7 @@ async function submitProv() {
   try {
     const url = editProvId ? `/api/proveedores/${editProvId}` : '/api/proveedores';
     const method = editProvId ? 'PUT' : 'POST';
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await fetch(url, { credentials: 'same-origin', method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (!res.ok) throw new Error('Error ' + res.status);
     const saved = await res.json();
     if (editProvId) {
