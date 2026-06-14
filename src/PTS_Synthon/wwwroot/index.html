@@ -811,31 +811,43 @@ body.login-active {
 /* ═══════════════════════════════════════════════════════
    TIPO SELECTOR
 ═══════════════════════════════════════════════════════ */
-.tipo-body {
-  padding: 28px 20px;
-  display: flex; flex-direction: column; align-items: center;
+/* pageTipo full-page Synthon background */
+#pageTipo {
   background:
     radial-gradient(ellipse 65% 85% at -8% 52%, rgba(90,15,115,.65) 0%, transparent 60%),
     linear-gradient(160deg, #1c1d36 0%, #11121f 100%);
-  min-height: 100%; position: relative; overflow: hidden;
+  position: relative;
+  overflow: hidden;
 }
-/* Synthon decorative lines overlay */
+/* Synthon decorative arc lines — covers entire pageTipo */
 .tipo-synthon-lines {
   position: absolute; bottom: 0; right: 0;
-  width: 80%; max-width: 900px; height: 90%;
+  width: 75%; height: 90%;
   pointer-events: none; z-index: 0;
 }
-/* Synthon brand in top-right */
+/* Header transparent for pageTipo */
+#pageTipo .pg-hdr {
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+#pageTipo .pg-hdr-title { color: rgba(255,255,255,.9); }
+#pageTipo .back-btn { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.2); }
+/* Synthon brand in top-right (absolute over entire page) */
 .tipo-synthon-brand {
-  position: absolute; top: 22px; right: 26px;
-  font-family: var(--ff-display); font-size: 26px; font-weight: 500;
+  position: absolute; top: 18px; right: 26px;
+  font-family: var(--ff-display); font-size: 28px; font-weight: 500;
   color: #ffffff; letter-spacing: 1px; z-index: 2;
   pointer-events: none;
 }
+.tipo-body {
+  padding: 28px 20px;
+  display: flex; flex-direction: column; align-items: center;
+  background: transparent;
+  flex: 1;
+}
 .tipo-hint { font-size: 12.5px; color: rgba(255,255,255,.7); margin-bottom: 22px; text-align: center; }
 /* cards sit above the SVG overlay */
-.tipo-grid { position: relative; z-index: 1; }
-.tipo-grid { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 480px; }
+.tipo-grid { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 480px; }
 .tipo-card {
   background: #ffffff;
   border: 1.5px solid rgba(176,141,87,.20);
@@ -1575,34 +1587,34 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 
 <!-- ═══ TIPO ═══ -->
 <div class="page" id="pageTipo">
+  <!-- Synthon brand top-right (absolute over full page) -->
+  <div class="tipo-synthon-brand">Synthon</div>
+  <!-- Decorative arc lines covering entire page -->
+  <svg class="tipo-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
+    <g fill="none">
+      <path stroke="rgba(210,55,170,0.90)" stroke-width="1.0" d="M 700,700 A 200 200 0 0 1 900,500"/>
+      <path stroke="rgba(210,55,170,0.85)" stroke-width="1.0" d="M 600,700 A 300 300 0 0 1 900,400"/>
+      <path stroke="rgba(210,55,170,0.80)" stroke-width="1.1" d="M 500,700 A 400 400 0 0 1 900,300"/>
+      <path stroke="rgba(210,55,170,0.75)" stroke-width="1.1" d="M 400,700 A 500 500 0 0 1 900,200"/>
+      <path stroke="rgba(210,55,170,0.70)" stroke-width="1.2" d="M 300,700 A 600 600 0 0 1 900,100"/>
+      <path stroke="rgba(210,55,170,0.65)" stroke-width="1.2" d="M 200,700 A 700 700 0 0 1 900,0"/>
+      <path stroke="rgba(210,55,170,0.60)" stroke-width="1.1" d="M 100,700 A 800 800 0 0 1 840,0"/>
+      <path stroke="rgba(210,55,170,0.55)" stroke-width="1.0" d="M 0,700 A 900 900 0 0 1 740,0"/>
+      <path stroke="rgba(210,55,170,0.50)" stroke-width="1.0" d="M -100,700 A 1000 1000 0 0 1 640,0"/>
+      <path stroke="rgba(210,55,170,0.45)" stroke-width="0.9" d="M -200,700 A 1100 1100 0 0 1 540,0"/>
+      <path stroke="rgba(210,55,170,0.40)" stroke-width="0.9" d="M -300,700 A 1200 1200 0 0 1 440,0"/>
+      <path stroke="rgba(210,55,170,0.35)" stroke-width="0.8" d="M -400,700 A 1300 1300 0 0 1 340,0"/>
+      <path stroke="rgba(210,55,170,0.28)" stroke-width="0.8" d="M -500,700 A 1400 1400 0 0 1 240,0"/>
+      <path stroke="rgba(210,55,170,0.22)" stroke-width="0.7" d="M -600,700 A 1500 1500 0 0 1 140,0"/>
+      <path stroke="rgba(210,55,170,0.16)" stroke-width="0.7" d="M -700,700 A 1600 1600 0 0 1 40,0"/>
+    </g>
+  </svg>
   <div class="pg-hdr">
     <button class="back-btn" onclick="showPage('pageDash')">←</button>
     <div class="pg-hdr-title">Tipo de Formulario</div>
   </div>
   <div class="pg-scroll">
     <div class="tipo-body">
-      <!-- Synthon brand -->
-      <div class="tipo-synthon-brand">Synthon</div>
-      <!-- Decorative curved lines (fan from bottom-right, matches Synthon corporate style) -->
-      <svg class="tipo-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
-        <g fill="none">
-          <path stroke="rgba(210,55,170,0.90)" stroke-width="1.0" d="M 700,700 A 200 200 0 0 1 900,500"/>
-          <path stroke="rgba(210,55,170,0.85)" stroke-width="1.0" d="M 600,700 A 300 300 0 0 1 900,400"/>
-          <path stroke="rgba(210,55,170,0.80)" stroke-width="1.1" d="M 500,700 A 400 400 0 0 1 900,300"/>
-          <path stroke="rgba(210,55,170,0.75)" stroke-width="1.1" d="M 400,700 A 500 500 0 0 1 900,200"/>
-          <path stroke="rgba(210,55,170,0.70)" stroke-width="1.2" d="M 300,700 A 600 600 0 0 1 900,100"/>
-          <path stroke="rgba(210,55,170,0.65)" stroke-width="1.2" d="M 200,700 A 700 700 0 0 1 900,0"/>
-          <path stroke="rgba(210,55,170,0.60)" stroke-width="1.1" d="M 100,700 A 800 800 0 0 1 840,0"/>
-          <path stroke="rgba(210,55,170,0.55)" stroke-width="1.0" d="M 0,700 A 900 900 0 0 1 740,0"/>
-          <path stroke="rgba(210,55,170,0.50)" stroke-width="1.0" d="M -100,700 A 1000 1000 0 0 1 640,0"/>
-          <path stroke="rgba(210,55,170,0.45)" stroke-width="0.9" d="M -200,700 A 1100 1100 0 0 1 540,0"/>
-          <path stroke="rgba(210,55,170,0.40)" stroke-width="0.9" d="M -300,700 A 1200 1200 0 0 1 440,0"/>
-          <path stroke="rgba(210,55,170,0.35)" stroke-width="0.8" d="M -400,700 A 1300 1300 0 0 1 340,0"/>
-          <path stroke="rgba(210,55,170,0.28)" stroke-width="0.8" d="M -500,700 A 1400 1400 0 0 1 240,0"/>
-          <path stroke="rgba(210,55,170,0.22)" stroke-width="0.7" d="M -600,700 A 1500 1500 0 0 1 140,0"/>
-          <path stroke="rgba(210,55,170,0.16)" stroke-width="0.7" d="M -700,700 A 1600 1600 0 0 1 40,0"/>
-        </g>
-      </svg>
       <div class="tipo-hint" style="margin-bottom:20px;text-align:center;font-size:13px">Seleccioná el formulario a completar:</div>
       <div class="tipo-grid">
         <button class="tipo-card pts-t" onclick="startForm('pts')">
@@ -1630,7 +1642,7 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
           <div class="tipo-arrow">›</div>
         </button>
       </div>
-      <div class="info-note" style="margin-top:14px;text-align:center">Los Check List deben adjuntarse a un PTS previo.</div>
+      <div style="margin-top:14px;text-align:center;font-size:12px;color:rgba(255,255,255,.5)">Los Check List deben adjuntarse a un PTS previo.</div>
     </div>
   </div>
 </div>
