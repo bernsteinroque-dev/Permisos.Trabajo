@@ -34,6 +34,14 @@ builder.Services.AddControllers()
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHostedService<VencimientoBackgroundService>();
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
