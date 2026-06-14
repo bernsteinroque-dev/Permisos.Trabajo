@@ -36,14 +36,22 @@ public class EmailService : IEmailService
 
     private MimeMessage CreateMessage(string to, string subject, string htmlBody)
     {
-        var msg = new MimeMessage();
-        msg.From.Add(new MailboxAddress(
-            _config.GetValue<string>("EmailSettings:SenderName") ?? "PTS Synthon",
-            _config.GetValue<string>("EmailSettings:SenderEmail") ?? "pts@synthon.com.ar"));
-        msg.To.Add(MailboxAddress.Parse(to));
-        msg.Subject = subject;
+        var senderEmail = _config.GetValue<string>("EmailSettings:SenderEmail") ?? "pts@synthon.com.ar";
+        var senderName  = _config.GetValue<string>("EmailSettings:SenderName")  ?? "PTS Synthon";
 
-        var builder = new BodyBuilder { HtmlBody = htmlBody };
+        var msg = new MimeMessage();
+        msg.From.Add(new MailboxAddress(senderName, senderEmail));
+        msg.To.Add(MailboxAddress.Parse(to));
+        msg.ReplyTo.Add(new MailboxAddress(senderName, senderEmail));
+        msg.Subject = subject;
+        msg.Date = DateTimeOffset.Now;
+        msg.MessageId = MimeUtils.GenerateMessageId();
+
+        // Plain-text fallback avoids spam filters that penalise HTML-only messages
+        var plainText = System.Text.RegularExpressions.Regex.Replace(htmlBody, "<[^>]+>", " ");
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s{2,}", " ").Trim();
+
+        var builder = new BodyBuilder { HtmlBody = htmlBody, TextBody = plainText };
         msg.Body = builder.ToMessageBody();
         return msg;
     }
