@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.EntityFrameworkCore;
 using PTS_Synthon.Data;
 using PTS_Synthon.Services;
@@ -7,9 +6,6 @@ using QuestPDF.Infrastructure;
 QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-    .AddNegotiate();
 
 builder.Services.AddAuthorization();
 
@@ -63,7 +59,6 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseSession();
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
