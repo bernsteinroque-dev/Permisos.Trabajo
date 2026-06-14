@@ -2855,7 +2855,7 @@ async function doSendEmail() {
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
   try {
     const res = await fetch(`/api/permisos/${rec.id}/email`, { method: 'POST', credentials: 'same-origin' });
-    if (res.ok) { showToast(`✅ Email enviado`); }
+    if (res.ok) { showToast(`✅ Email enviado`); closeModal(); showPage('pageTipo'); }
     else {
       let msg = 'Error ' + res.status;
       try { const body = await res.json(); if (body.errors) msg = body.errors.join(' | '); } catch {}
