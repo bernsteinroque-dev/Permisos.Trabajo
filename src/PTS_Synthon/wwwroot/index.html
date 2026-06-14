@@ -6,7 +6,7 @@
 <title>PTS · Synthon — Sistema de Permisos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@600&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════
    DESIGN TOKENS — PASTEL INDUSTRIAL PREMIUM
@@ -100,7 +100,7 @@
   --shadow-xl:   0 16px 80px rgba(0,0,0,.30);
 
   /* Typography */
-  --ff-display: 'Fraunces', Georgia, serif;
+  --ff-display: 'Cinzel', 'Fraunces', Georgia, serif;
   --ff-body:    'DM Sans', system-ui, sans-serif;
   --ff-mono:    'JetBrains Mono', monospace;
 
@@ -1468,8 +1468,12 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
     </div>
 
     <div class="login-field">
-      <label>Nombre y Apellido</label>
-      <input type="text" id="loginNombre" placeholder="Ej: Juan García" autocomplete="name" oninput="hideLoginWarning()">
+      <label>Usuario de Red</label>
+      <input type="text" id="loginUser" placeholder="Ej: jgarcia" autocomplete="username" oninput="hideLoginWarning()" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" oninput="hideLoginWarning()" onkeydown="if(event.key==='Enter')doLogin()">
       <div id="loginWarning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(180,30,30,.22);border:1.5px solid rgba(220,60,60,.55);border-radius:10px;align-items:flex-start;gap:10px;animation:scaleIn .25s cubic-bezier(.34,1.56,.64,1);">
         <span style="font-size:22px;flex-shrink:0">🚫</span>
         <div>
@@ -1479,9 +1483,6 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
       </div>
     </div>
 
-    <div id="adRoleNote" style="display:none;text-align:center;margin-bottom:12px;padding:9px 14px;background:rgba(90,138,110,.18);border:1px solid rgba(90,138,110,.40);border-radius:10px;font-size:12px;color:rgba(255,255,255,.9);">
-      🔐 Autenticado como: <strong id="adRoleText" style="color:#a8d5b5">—</strong>
-    </div>
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Ingresar al Sistema</button>
 
     <div class="login-footer">
@@ -1819,40 +1820,40 @@ async function initAuth() {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
     if (res.ok) {
-      _windowsUser = await res.json();
-      if (_windowsUser && _windowsUser.isAuthenticated) {
-        // Pre-fill the display name from Windows Auth
-        const inp = document.getElementById('loginNombre');
-        if (inp && !inp.value) inp.value = _windowsUser.name || '';
-        hideLoginWarning();
-        const labels = { admin: 'Administrador', supervisor: 'Supervisor', proveedor: 'Proveedor', lectura: 'Solo Lectura' };
-        const note = document.getElementById('adRoleNote');
-        const roleText = document.getElementById('adRoleText');
-        if (note && roleText) {
-          roleText.textContent = `${_windowsUser.windowsUser} — ${labels[_windowsUser.role] || _windowsUser.role}`;
-          note.style.display = 'block';
-        }
-      } else if (_windowsUser && !_windowsUser.isAuthenticated) {
-        // Authenticated by Windows but no access rights
-        showAccessDenied(_windowsUser.errorMessage || 'El usuario no tiene permisos en esta aplicación. Contacte al Administrador del Sistema.');
+      const data = await res.json();
+      if (data && data.isAuthenticated) {
+        // Session already active — auto-login
+        _windowsUser = data;
+        currentUser = data.name;
+        role = data.role;
+        currentCompany = _selectedCompany;
+        document.getElementById('loginShell').style.display = 'none';
+        document.getElementById('appShell').classList.add('visible');
+        document.body.classList.remove('login-active');
+        document.body.classList.add('app-active');
+        updateUserChip();
+        updateDashDate();
+        await Promise.all([loadPermisos(), loadProveedores()]);
+        updateStats();
+        renderList();
       }
     }
-    // If res is not ok, just show the login form normally - Windows Auth will prompt for credentials
   } catch (e) { console.warn('Auth check failed:', e); }
 }
 
-function showAccessDenied(msg) {
-  document.getElementById('loginNombre').value = document.getElementById('loginNombre').value || 'Sin acceso';
+function showLoginWarning(title, msg) {
   const w = document.getElementById('loginWarning');
   if (w) {
     w.style.display = 'flex';
     const titleEl = document.getElementById('loginWarnTitle');
     const msgEl = document.getElementById('loginWarnMsg');
-    if (titleEl) titleEl.textContent = 'Acceso Denegado';
+    if (titleEl) titleEl.textContent = title;
     if (msgEl) msgEl.textContent = msg;
   }
-  const btn = document.getElementById('loginBtn');
-  if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.style.cursor = 'not-allowed'; }
+}
+function hideLoginWarning() {
+  const w = document.getElementById('loginWarning');
+  if (w) w.style.display = 'none';
 }
 
 function selectCompany(el, name) {
@@ -1865,52 +1866,68 @@ function selectRole(el, r) {
   el.classList.add('on');
   _selectedRole = r;
 }
-function hideLoginWarning() {
-  const w = document.getElementById('loginWarning');
-  if (w) w.style.display = 'none';
-}
-async function doLogin() {
-  // Block if Windows Auth failed entirely
-  if (_windowsUser && !_windowsUser.isAuthenticated) {
-    showAccessDenied((_windowsUser?.errorMessage) || 'Acceso denegado. El usuario no tiene permisos en esta aplicación. Contacte al Administrador del Sistema.');
-    return;
-  }
-  const nom = document.getElementById('loginNombre').value.trim();
-  if (!nom) {
-    const w = document.getElementById('loginWarning');
-    if (w) {
-      w.style.display = 'flex';
-      const titleEl = document.getElementById('loginWarnTitle');
-      const msgEl = document.getElementById('loginWarnMsg');
-      if (titleEl) titleEl.textContent = 'Campo requerido';
-      if (msgEl) msgEl.textContent = 'Debés ingresar tu Nombre y Apellido para continuar.';
-    }
-    document.getElementById('loginNombre').focus();
-    return;
-  }
-  currentUser = nom;
-  currentCompany = _selectedCompany;
-  role = _windowsUser?.role || _selectedRole;
 
-  document.getElementById('loginShell').style.display = 'none';
-  document.getElementById('appShell').classList.add('visible');
-  document.body.classList.remove('login-active');
-  document.body.classList.add('app-active');
-  updateUserChip();
-  updateDashDate();
-  showToast(`✅ Bienvenido, ${nom.split(' ')[0]}!`);
-  await Promise.all([loadPermisos(), loadProveedores()]);
-  updateStats();
-  renderList();
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if (!user) { showLoginWarning('Campo requerido', 'Ingresá tu usuario de red.'); document.getElementById('loginUser').focus(); return; }
+  if (!pass)  { showLoginWarning('Campo requerido', 'Ingresá tu contraseña.'); document.getElementById('loginPass').focus(); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '⏳ Verificando...';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      if (data.error === 'user_not_found')   showLoginWarning('Usuario Inexistente', 'El usuario ingresado no existe en el dominio.');
+      else if (data.error === 'invalid_password') showLoginWarning('Contraseña Incorrecta', 'La contraseña ingresada es incorrecta. Verificá e intentá nuevamente.');
+      else if (data.error === 'no_group')    showLoginWarning('Acceso Denegado', 'El usuario no pertenece a ningún grupo autorizado de la aplicación.');
+      else if (data.error === 'ad_unavailable') showLoginWarning('Error de Dominio', data.message || 'No se pudo conectar con el dominio.');
+      else showLoginWarning('Error', data.message || 'Error al verificar credenciales.');
+      document.getElementById('loginPass').value = '';
+      return;
+    }
+
+    _windowsUser = data;
+    currentUser = data.name;
+    role = data.role;
+    currentCompany = _selectedCompany;
+
+    document.getElementById('loginShell').style.display = 'none';
+    document.getElementById('appShell').classList.add('visible');
+    document.body.classList.remove('login-active');
+    document.body.classList.add('app-active');
+    updateUserChip();
+    updateDashDate();
+    showToast(`✅ Bienvenido, ${data.name.split(' ')[0]}!`);
+    await Promise.all([loadPermisos(), loadProveedores()]);
+    updateStats();
+    renderList();
+  } catch(e) {
+    showLoginWarning('Error de Conexión', 'No se pudo conectar con el servidor. Intentá nuevamente.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Ingresar al Sistema';
+  }
 }
-function doLogout() {
+
+async function doLogout() {
+  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
   document.getElementById('appShell').classList.remove('visible');
   document.getElementById('loginShell').style.display = 'flex';
-  document.getElementById('loginNombre').value = '';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  hideLoginWarning();
   document.body.classList.add('login-active');
   document.body.classList.remove('app-active');
   pts = []; proveedores = [];
-  _windowsUser = null;
+  _windowsUser = null; currentUser = ''; role = '';
   showPage('pageDash');
   document.querySelectorAll('.tnav-btn').forEach(t => t.classList.remove('on'));
   document.getElementById('navPermisos').classList.add('on');

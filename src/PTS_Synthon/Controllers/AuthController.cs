@@ -1,3 +1,4 @@
+using System.DirectoryServices.AccountManagement;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,10 +43,102 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public IActionResult Login([FromBody] LoginRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Username) || string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest(new { error = "missing_fields", message = "Ingresá usuario y contraseña." });
+
+        var adSettings = _config.GetSection("AdSettings");
+        var domain = adSettings.GetValue<string>("Domain") ?? "SYNTHON";
+
+        // Strip domain prefix if present (DOMAIN\user or user@domain)
+        var username = req.Username.Contains('\\')
+            ? req.Username.Split('\\').Last()
+            : req.Username.Contains('@') ? req.Username.Split('@').First() : req.Username;
+
+        try
+        {
+            using var ctx = new PrincipalContext(ContextType.Domain, domain);
+
+            // Step 1: check user exists
+            UserPrincipal? user = null;
+            try { user = UserPrincipal.FindByIdentity(ctx, IdentityType.SamAccountName, username); }
+            catch { }
+
+            if (user == null)
+                return Unauthorized(new { error = "user_not_found", message = "El usuario no existe en el dominio." });
+
+            // Step 2: validate password
+            bool passwordOk = false;
+            try { passwordOk = ctx.ValidateCredentials(username, req.Password); }
+            catch { }
+
+            if (!passwordOk)
+                return Unauthorized(new { error = "invalid_password", message = "La contraseña ingresada es incorrecta." });
+
+            // Step 3: check group membership
+            var adminGroup    = adSettings.GetValue<string>("AdminGroup")      ?? "PTS_Admins";
+            var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
+            var proveedorGroup  = adSettings.GetValue<string>("ProveedorGroup")  ?? "PTS_Proveedores";
+            var lecturaGroup    = adSettings.GetValue<string>("LecturaGroup")    ?? "PTS_Lectura";
+
+            string role = "denied";
+            try
+            {
+                var groups = user.GetAuthorizationGroups().Select(g => g.Name).ToHashSet();
+                if (groups.Contains(adminGroup))       role = "admin";
+                else if (groups.Contains(supervisorGroup)) role = "supervisor";
+                else if (groups.Contains(proveedorGroup))  role = "proveedor";
+                else if (groups.Contains(lecturaGroup))    role = "lectura";
+            }
+            catch { }
+
+            if (role == "denied")
+                return StatusCode(403, new { error = "no_group", message = "El usuario no pertenece a ningún grupo autorizado de la aplicación." });
+
+            var displayName = user.DisplayName ?? user.SamAccountName ?? username;
+            var windowsUser = $"{domain}\\{username}";
+
+            // Store in session
+            HttpContext.Session.SetString("windowsUser", windowsUser);
+            HttpContext.Session.SetString("displayName", displayName);
+            HttpContext.Session.SetString("role", role);
+
+            return Ok(new { name = displayName, windowsUser, role, isAuthenticated = true });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "ad_unavailable", message = $"No se puede conectar con el dominio: {ex.Message}" });
+        }
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Clear();
+        return Ok(new { ok = true });
+    }
+
     [HttpGet("me")]
     [AllowAnonymous]
     public IActionResult GetMe()
     {
+        // Check session first
+        var sessionRole = HttpContext.Session.GetString("role");
+        if (!string.IsNullOrEmpty(sessionRole))
+        {
+            return Ok(new
+            {
+                name        = HttpContext.Session.GetString("displayName") ?? "",
+                windowsUser = HttpContext.Session.GetString("windowsUser") ?? "",
+                role        = sessionRole,
+                isAuthenticated = true
+            });
+        }
+
         // Development fallback
         var devAuth = _config.GetSection("DevAuth");
         if (devAuth.GetValue<bool>("Enabled") &&
@@ -61,33 +154,33 @@ public class AuthController : ControllerBase
             });
         }
 
-        if (User.Identity == null || !User.Identity.IsAuthenticated)
-            return Ok(new { isAuthenticated = false, role = "unauthenticated" });
-
-        var adSettings = _config.GetSection("AdSettings");
-        var adminGroup = adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins";
-        var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
-        var proveedorGroup = adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores";
-        var lecturaGroup = adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura";
-        var defaultRole = adSettings.GetValue<string>("DefaultRole") ?? "admin";
-
-        string role = defaultRole;
-        if (User.IsInRole(adminGroup)) role = "admin";
-        else if (User.IsInRole(supervisorGroup)) role = "supervisor";
-        else if (User.IsInRole(proveedorGroup)) role = "proveedor";
-        else if (User.IsInRole(lecturaGroup)) role = "lectura";
-
-        var windowsUser = User.Identity.Name ?? string.Empty;
-        var displayName = windowsUser.Contains('\\')
-            ? windowsUser.Split('\\').Last()
-            : windowsUser;
-
-        return Ok(new
+        // Windows Auth fallback
+        if (User.Identity != null && User.Identity.IsAuthenticated)
         {
-            name = displayName,
-            windowsUser = windowsUser,
-            role = role,
-            isAuthenticated = true
-        });
+            var adSettings = _config.GetSection("AdSettings");
+            var adminGroup      = adSettings.GetValue<string>("AdminGroup")      ?? "PTS_Admins";
+            var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
+            var proveedorGroup  = adSettings.GetValue<string>("ProveedorGroup")  ?? "PTS_Proveedores";
+            var lecturaGroup    = adSettings.GetValue<string>("LecturaGroup")    ?? "PTS_Lectura";
+            var defaultRole     = adSettings.GetValue<string>("DefaultRole")     ?? "denied";
+
+            string role = defaultRole;
+            if (User.IsInRole(adminGroup))       role = "admin";
+            else if (User.IsInRole(supervisorGroup)) role = "supervisor";
+            else if (User.IsInRole(proveedorGroup))  role = "proveedor";
+            else if (User.IsInRole(lecturaGroup))    role = "lectura";
+
+            var windowsUser = User.Identity.Name ?? string.Empty;
+            var displayName = windowsUser.Contains('\\') ? windowsUser.Split('\\').Last() : windowsUser;
+
+            if (role == "denied")
+                return Ok(new { isAuthenticated = false, role = "denied", errorMessage = "El usuario no pertenece a ningún grupo autorizado." });
+
+            return Ok(new { name = displayName, windowsUser, role, isAuthenticated = true });
+        }
+
+        return Ok(new { isAuthenticated = false, role = "unauthenticated" });
     }
 }
+
+public record LoginRequest(string Username, string Password);

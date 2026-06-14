@@ -9,7 +9,7 @@ namespace PTS_Synthon.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[AllowAnonymous]
 public class PermisosController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -27,6 +27,8 @@ public class PermisosController : ControllerBase
 
     private string GetCurrentUser()
     {
+        var sessionUser = HttpContext.Session.GetString("windowsUser");
+        if (!string.IsNullOrEmpty(sessionUser)) return sessionUser;
         var devAuth = _config.GetSection("DevAuth");
         if (devAuth.GetValue<bool>("Enabled") &&
             (User.Identity == null || !User.Identity.IsAuthenticated))
@@ -36,20 +38,22 @@ public class PermisosController : ControllerBase
 
     private string GetCurrentRole()
     {
+        var sessionRole = HttpContext.Session.GetString("role");
+        if (!string.IsNullOrEmpty(sessionRole)) return sessionRole;
         var devAuth = _config.GetSection("DevAuth");
         if (devAuth.GetValue<bool>("Enabled") &&
             (User.Identity == null || !User.Identity.IsAuthenticated))
             return devAuth.GetValue<string>("Role") ?? "admin";
-
         var adSettings = _config.GetSection("AdSettings");
         if (User.IsInRole(adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins")) return "admin";
         if (User.IsInRole(adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores")) return "supervisor";
         if (User.IsInRole(adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores")) return "proveedor";
         if (User.IsInRole(adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura")) return "lectura";
-        return adSettings.GetValue<string>("DefaultRole") ?? "admin";
+        return adSettings.GetValue<string>("DefaultRole") ?? "denied";
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? status,
         [FromQuery] string? tipo,
@@ -59,6 +63,7 @@ public class PermisosController : ControllerBase
     {
         var currentUser = GetCurrentUser();
         var role = GetCurrentRole();
+        if (role == "denied") return Unauthorized(new { error = "not_authenticated" });
 
         var query = _db.Permisos.AsQueryable();
 

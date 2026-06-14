@@ -13,6 +13,15 @@ builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -27,7 +36,6 @@ builder.Services.AddHostedService<VencimientoBackgroundService>();
 
 var app = builder.Build();
 
-// Ensure DB tables exist (creates schema if DB is empty or new)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -39,19 +47,18 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "CRITICAL: Database initialization failed. Check connection string and SQL Server availability.");
+        logger.LogError(ex, "CRITICAL: Database initialization failed.");
     }
 }
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// SPA fallback
 app.MapFallbackToFile("index.html");
 
 app.Run();

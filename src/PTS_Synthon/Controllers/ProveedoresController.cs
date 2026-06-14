@@ -8,7 +8,7 @@ namespace PTS_Synthon.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[AllowAnonymous]
 public class ProveedoresController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -22,6 +22,8 @@ public class ProveedoresController : ControllerBase
 
     private string GetCurrentUser()
     {
+        var sessionUser = HttpContext.Session.GetString("windowsUser");
+        if (!string.IsNullOrEmpty(sessionUser)) return sessionUser;
         var devAuth = _config.GetSection("DevAuth");
         if (devAuth.GetValue<bool>("Enabled") &&
             (User.Identity == null || !User.Identity.IsAuthenticated))
@@ -31,22 +33,24 @@ public class ProveedoresController : ControllerBase
 
     private string GetCurrentRole()
     {
+        var sessionRole = HttpContext.Session.GetString("role");
+        if (!string.IsNullOrEmpty(sessionRole)) return sessionRole;
         var devAuth = _config.GetSection("DevAuth");
         if (devAuth.GetValue<bool>("Enabled") &&
             (User.Identity == null || !User.Identity.IsAuthenticated))
             return devAuth.GetValue<string>("Role") ?? "admin";
-
         var adSettings = _config.GetSection("AdSettings");
         if (User.IsInRole(adSettings.GetValue<string>("AdminGroup") ?? "PTS_Admins")) return "admin";
         if (User.IsInRole(adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores")) return "supervisor";
         if (User.IsInRole(adSettings.GetValue<string>("ProveedorGroup") ?? "PTS_Proveedores")) return "proveedor";
         if (User.IsInRole(adSettings.GetValue<string>("LecturaGroup") ?? "PTS_Lectura")) return "lectura";
-        return adSettings.GetValue<string>("DefaultRole") ?? "admin";
+        return adSettings.GetValue<string>("DefaultRole") ?? "denied";
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        if (GetCurrentRole() == "denied") return Unauthorized(new { error = "not_authenticated" });
         var proveedores = await _db.Proveedores.OrderBy(p => p.RazonSocial).ToListAsync();
         return Ok(proveedores);
     }
