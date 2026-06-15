@@ -243,7 +243,7 @@ body.login-active {
 }
 @keyframes shimmerSlide { to { left: 200%; } }
 .login-logo-text { flex: 1; }
-.login-brand { font-family: var(--ff-display); font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -.3px; line-height: 1.1; }
+.login-brand { font-family: var(--ff-display); font-size: 28px; font-weight: 700; color: #D4007A; letter-spacing: .5px; line-height: 1.1; }
 .login-tagline { font-size: 11.5px; color: rgba(255,255,255,.65); margin-top: 2px; font-weight: 500; }
 .login-title { font-family: var(--ff-display); font-size: 26px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: -.4px; }
 .login-sub { font-size: 13px; color: rgba(255,255,255,.7); margin-bottom: 28px; }
@@ -422,9 +422,9 @@ body.login-active {
 }
 .brand-name {
   font-family: var(--ff-display);
-  font-size: 18px; font-weight: 700;
-  letter-spacing: -.3px;
-  color: #FF00FF;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: .5px;
+  color: #D4007A;
   line-height: 1;
 }
 .brand-name small { color: rgba(255,255,255,.65); font-size: 11px; font-weight: 400; font-family: var(--ff-body); display: block; margin-top: 1px; }
@@ -833,8 +833,8 @@ body.login-active {
 /* Synthon brand in top-right (absolute over entire page) */
 .tipo-synthon-brand {
   position: absolute; top: 18px; right: 26px;
-  font-family: var(--ff-display); font-size: 28px; font-weight: 500;
-  color: #ffffff; letter-spacing: 1px; z-index: 2;
+  font-family: var(--ff-display); font-size: 34px; font-weight: 600;
+  color: #D4007A; letter-spacing: 1.5px; z-index: 2;
   pointer-events: none;
 }
 .tipo-body {
@@ -1414,7 +1414,7 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 <div id="loginShell">
   <div class="login-bg-shapes">
     <!-- Synthon brand top-right -->
-    <div style="position:absolute;top:28px;right:36px;font-family:var(--ff-display);font-size:30px;font-weight:500;color:#ffffff;letter-spacing:1px;z-index:5">Synthon</div>
+    <div style="position:absolute;top:28px;right:36px;font-family:var(--ff-display);font-size:36px;font-weight:600;color:#D4007A;letter-spacing:1.5px;z-index:5">Synthon</div>
     <!-- Synthon decorative arc lines (fan from bottom-right) -->
     <svg class="login-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
       <g fill="none">
@@ -2941,7 +2941,8 @@ function openDetailFromData(p) {
     actionHtml = `<div class="alert alert-apro"><span class="alert-icon">✅</span><div><strong>APROBADO</strong> por ${p.supNombre || 'Supervisor'}${p.supComentario ? ' — ' + p.supComentario : ''}</div></div>
     <button class="btn btn-blue btn-full" style="margin-bottom:12px" onclick="showApprovalPreview(${p.id})">📧 Ver y Reenviar Email al Proveedor</button>`;
   } else if (p.status === 'rejected') {
-    actionHtml = `<div class="alert alert-rech"><span class="alert-icon">❌</span><div><strong>RECHAZADO</strong> por ${p.supNombre || 'Supervisor'}${p.supComentario ? ' — ' + p.supComentario : ''}</div></div>`;
+    actionHtml = `<div class="alert alert-rech"><span class="alert-icon">❌</span><div><strong>RECHAZADO</strong> por ${p.supNombre || 'Supervisor'}${p.supComentario ? ' — ' + p.supComentario : ''}</div></div>
+    <button class="btn btn-blue btn-full" style="margin-bottom:12px" onclick="showApprovalPreview(${p.id})">📧 Ver y Reenviar Email al Proveedor</button>`;
   } else if (!isSupOrAdmin) {
     actionHtml = `<div class="alert alert-pend"><span class="alert-icon">⏳</span><div>Este formulario está <strong>PENDIENTE</strong> de aprobación del supervisor.</div></div>`;
   }
