@@ -2678,7 +2678,7 @@ async function submitForm() {
     document.getElementById('fNo').textContent = 'N° ' + nro;
     const nroField = document.getElementById('f_nro_display');
     if (nroField) nroField.value = 'N° ' + nro;
-    updateStats();
+    updateStats(); renderList();
     showPreview(saved);
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);
