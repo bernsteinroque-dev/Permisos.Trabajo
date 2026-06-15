@@ -3086,7 +3086,7 @@ async function aprobar(id) {
     const updated = await res.json();
     const idx = pts.findIndex(x => x.id === id);
     if (idx >= 0) pts[idx] = updated;
-    updateStats();
+    updateStats(); renderList();
     openDetailFromData(updated);
     showToast('✅ Permiso aprobado');
     setTimeout(() => showApprovalPreview(id), 400);
@@ -3107,7 +3107,7 @@ async function rechazar(id) {
     const updated = await res.json();
     const idx = pts.findIndex(x => x.id === id);
     if (idx >= 0) pts[idx] = updated;
-    updateStats();
+    updateStats(); renderList();
     openDetailFromData(updated);
     showToast('❌ Permiso rechazado');
   } catch { showToast('❌ Error al rechazar el permiso'); }
