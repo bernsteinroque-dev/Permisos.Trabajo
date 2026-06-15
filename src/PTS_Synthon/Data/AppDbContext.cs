@@ -45,9 +45,12 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.ProveedorId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            entity.HasIndex(e => e.NumeroPermiso).HasDatabaseName("IX_Permisos_NumeroPermiso");
+            entity.HasIndex(e => e.NumeroPermiso).HasDatabaseName("IX_Permisos_NumeroPermiso").IsUnique();
             entity.HasIndex(e => e.Estado).HasDatabaseName("IX_Permisos_Estado");
             entity.HasIndex(e => e.CreadoPor).HasDatabaseName("IX_Permisos_CreadoPor");
+            entity.HasIndex(e => e.FechaCreacion).HasDatabaseName("IX_Permisos_FechaCreacion");
+            entity.HasIndex(e => new { e.Estado, e.FechaCreacion }).HasDatabaseName("IX_Permisos_Estado_Fecha");
+            entity.HasIndex(e => e.Tipo).HasDatabaseName("IX_Permisos_Tipo");
         });
 
         modelBuilder.Entity<Proveedor>(entity =>
@@ -60,6 +63,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CreadoPor).HasMaxLength(100).IsRequired();
             entity.Property(e => e.ObsDocumentacion).HasColumnType("nvarchar(max)");
             entity.Property(e => e.Observaciones).HasColumnType("nvarchar(max)");
+
+            entity.HasIndex(e => e.RazonSocial).HasDatabaseName("IX_Proveedores_RazonSocial");
+            entity.HasIndex(e => e.Estado).HasDatabaseName("IX_Proveedores_Estado");
         });
     }
 }

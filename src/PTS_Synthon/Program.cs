@@ -47,7 +47,23 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.EnsureCreated();
-        logger.LogInformation("Database schema verified/created successfully.");
+
+        // Create indexes idempotently (safe to run on existing DB)
+        var indexSql = """
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Permisos_FechaCreacion' AND object_id = OBJECT_ID('Permisos'))
+                CREATE INDEX IX_Permisos_FechaCreacion ON Permisos (FechaCreacion DESC);
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Permisos_Estado_Fecha' AND object_id = OBJECT_ID('Permisos'))
+                CREATE INDEX IX_Permisos_Estado_Fecha ON Permisos (Estado, FechaCreacion DESC);
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Permisos_Tipo' AND object_id = OBJECT_ID('Permisos'))
+                CREATE INDEX IX_Permisos_Tipo ON Permisos (Tipo);
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Proveedores_RazonSocial' AND object_id = OBJECT_ID('Proveedores'))
+                CREATE INDEX IX_Proveedores_RazonSocial ON Proveedores (RazonSocial);
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Proveedores_Estado' AND object_id = OBJECT_ID('Proveedores'))
+                CREATE INDEX IX_Proveedores_Estado ON Proveedores (Estado);
+            """;
+        db.Database.ExecuteSqlRaw(indexSql);
+
+        logger.LogInformation("Database schema and indexes verified successfully.");
     }
     catch (Exception ex)
     {
