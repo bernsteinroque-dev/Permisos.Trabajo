@@ -45,7 +45,7 @@ public class EmailService : IEmailService
         msg.ReplyTo.Add(new MailboxAddress(senderName, senderEmail));
         msg.Subject = subject;
         msg.Date = DateTimeOffset.Now;
-        msg.MessageId = MimeUtils.GenerateMessageId();
+        msg.MessageId = MimeKit.MimeUtils.GenerateMessageId();
 
         // Plain-text fallback avoids spam filters that penalise HTML-only messages
         var plainText = System.Text.RegularExpressions.Regex.Replace(htmlBody, "<[^>]+>", " ");
