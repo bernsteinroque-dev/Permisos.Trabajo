@@ -114,6 +114,52 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpGet("validate-supervisor")]
+    [AllowAnonymous]
+    public IActionResult ValidateSupervisor([FromQuery] string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return BadRequest(new { error = "missing_username" });
+
+        var adSettings = _config.GetSection("AdSettings");
+        var domain = adSettings.GetValue<string>("Domain") ?? "ar.corporate.synthon-group.com";
+        var supervisorGroup = adSettings.GetValue<string>("SupervisorGroup") ?? "PTS_Supervisores";
+        var adminGroup      = adSettings.GetValue<string>("AdminGroup")      ?? "PTS_Admins";
+
+        var sam = username.Contains('\\') ? username.Split('\\').Last()
+                : username.Contains('@')  ? username.Split('@').First()
+                : username;
+
+        try
+        {
+            using var ctx = new PrincipalContext(ContextType.Domain, domain);
+
+            UserPrincipal? user = null;
+            try { user = UserPrincipal.FindByIdentity(ctx, IdentityType.SamAccountName, sam); } catch { }
+
+            if (user == null)
+                return Ok(new { valid = false, error = "user_not_found", message = "Usuario inexistente en el dominio." });
+
+            bool isSup = false;
+            try
+            {
+                var groups = user.GetAuthorizationGroups().Select(g => g.Name).ToHashSet();
+                isSup = groups.Contains(supervisorGroup) || groups.Contains(adminGroup);
+            }
+            catch { }
+
+            if (!isSup)
+                return Ok(new { valid = false, error = "not_supervisor", message = "El usuario no pertenece al grupo de Supervisores." });
+
+            var displayName = user.DisplayName ?? user.SamAccountName ?? sam;
+            return Ok(new { valid = true, displayName });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { valid = false, error = "ad_unavailable", message = $"No se pudo contactar el dominio: {ex.Message}" });
+        }
+    }
+
     [HttpPost("logout")]
     [AllowAnonymous]
     public IActionResult Logout()

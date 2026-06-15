@@ -2924,11 +2924,17 @@ function openDetailFromData(p) {
   if (isSupOrAdmin && p.status === 'pending') {
     actionHtml = `<div class="sup-action">
       <div class="sup-action-title">🔑 Acción del Supervisor</div>
-      <div class="fg f1"><label class="lbl">Nombre del Supervisor</label><input id="supNom" placeholder="Nombre y Apellido" value="${p.supNombre || ''}"></div>
+      <div class="fg f1">
+        <label class="lbl">Usuario de Red del Supervisor</label>
+        <input id="supNom" placeholder="Ej: jgarcia" autocomplete="off"
+          oninput="supValidReset()"
+          onblur="validarSupervisor()">
+        <div id="supValMsg" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px"></div>
+      </div>
       <div class="fg f1"><label class="lbl">Comentario (opcional)</label><textarea id="supCom">${p.supComentario || ''}</textarea></div>
       <div class="sup-btn-row">
-        <button class="btn btn-green" style="flex:1;justify-content:center" onclick="aprobar(${p.id})">✅ Aprobar</button>
-        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="rechazar(${p.id})">❌ Rechazar</button>
+        <button id="btnAprobar" class="btn btn-green" style="flex:1;justify-content:center" onclick="aprobar(${p.id})" disabled>✅ Aprobar</button>
+        <button id="btnRechazar" class="btn btn-primary" style="flex:1;justify-content:center" onclick="rechazar(${p.id})" disabled>❌ Rechazar</button>
       </div>
     </div>`;
   } else if (p.status === 'approved') {
@@ -3011,15 +3017,70 @@ function openDetail(id) {
   openDetailFromData(p);
 }
 
+/* ══════════════════════════════════════════════
+   VALIDACIÓN SUPERVISOR AD
+══════════════════════════════════════════════ */
+let _supValidated = false;
+let _supDisplayName = '';
+
+function supValidReset() {
+  _supValidated = false; _supDisplayName = '';
+  const msg = document.getElementById('supValMsg');
+  if (msg) msg.style.display = 'none';
+  document.getElementById('btnAprobar')?.setAttribute('disabled','');
+  document.getElementById('btnRechazar')?.setAttribute('disabled','');
+}
+
+async function validarSupervisor() {
+  const input = document.getElementById('supNom');
+  const msg   = document.getElementById('supValMsg');
+  if (!input || !msg) return;
+  const val = input.value.trim();
+  if (!val) return;
+
+  msg.style.display = 'flex';
+  msg.style.background = 'rgba(176,141,87,.12)';
+  msg.style.border = '1.5px solid rgba(176,141,87,.3)';
+  msg.style.color = '#7a6030';
+  msg.innerHTML = '⏳ Verificando en el dominio…';
+
+  try {
+    const res  = await fetch(`/api/auth/validate-supervisor?username=${encodeURIComponent(val)}`, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (data.valid) {
+      _supValidated = true; _supDisplayName = data.displayName;
+      msg.style.background = 'rgba(40,168,95,.12)';
+      msg.style.border = '1.5px solid rgba(40,168,95,.35)';
+      msg.style.color = '#1a6e3a';
+      msg.innerHTML = `✅ <span><strong>${data.displayName}</strong> — Supervisor verificado</span>`;
+      document.getElementById('btnAprobar')?.removeAttribute('disabled');
+      document.getElementById('btnRechazar')?.removeAttribute('disabled');
+    } else {
+      _supValidated = false;
+      msg.style.background = 'rgba(200,40,40,.10)';
+      msg.style.border = '1.5px solid rgba(200,40,40,.35)';
+      msg.style.color = '#8b1a1a';
+      msg.innerHTML = `🚫 <span>${data.message || 'Error de validación'}</span>`;
+      document.getElementById('btnAprobar')?.setAttribute('disabled','');
+      document.getElementById('btnRechazar')?.setAttribute('disabled','');
+    }
+  } catch {
+    msg.style.background = 'rgba(200,40,40,.10)';
+    msg.style.border = '1.5px solid rgba(200,40,40,.35)';
+    msg.style.color = '#8b1a1a';
+    msg.innerHTML = '🚫 <span>No se pudo contactar el servidor</span>';
+  }
+}
+
 async function aprobar(id) {
-  const nom = document.getElementById('supNom')?.value.trim();
-  if (!nom) { showToast('⚠️ Ingresá el nombre del supervisor'); return; }
+  const nom = _supDisplayName || document.getElementById('supNom')?.value.trim();
+  if (!_supValidated) { showToast('⚠️ Validá el usuario del supervisor antes de aprobar'); return; }
   try {
     const res = await fetch(`/api/permisos/${id}/aprobar`, {
       credentials: 'same-origin',
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ supervisorNombre: nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
+      body: JSON.stringify({ supervisorNombre: _supDisplayName || nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
     });
     if (!res.ok) throw new Error();
     const updated = await res.json();
@@ -3033,14 +3094,14 @@ async function aprobar(id) {
 }
 
 async function rechazar(id) {
-  const nom = document.getElementById('supNom')?.value.trim();
-  if (!nom) { showToast('⚠️ Ingresá el nombre del supervisor'); return; }
+  const nom = _supDisplayName || document.getElementById('supNom')?.value.trim();
+  if (!_supValidated) { showToast('⚠️ Validá el usuario del supervisor antes de rechazar'); return; }
   try {
     const res = await fetch(`/api/permisos/${id}/rechazar`, {
       credentials: 'same-origin',
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ supervisorNombre: nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
+      body: JSON.stringify({ supervisorNombre: _supDisplayName || nom, supervisorComentario: document.getElementById('supCom')?.value.trim() || '' })
     });
     if (!res.ok) throw new Error();
     const updated = await res.json();
