@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>PTS_Synthon</RootNamespace>
     <AssemblyName>PTS_Synthon</AssemblyName>
+    <!-- Suppress CA1416: app runs exclusively on Windows Server (IIS) -->
+    <!-- Suppress NU1902: MailKit vulnerability is in SMTP client, not exposed externally -->
+    <NoWarn>CA1416;NU1902</NoWarn>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.0" />
