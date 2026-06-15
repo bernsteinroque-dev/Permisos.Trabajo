@@ -3416,6 +3416,33 @@ function exportPDF() {
 }
 
 /* ══════════════════════════════════════════════
+   ENTER KEY = TAB (advance to next field)
+══════════════════════════════════════════════ */
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  const tag = e.target.tagName;
+  const type = (e.target.type || '').toLowerCase();
+  const isField = (tag === 'INPUT' && type !== 'submit' && type !== 'button' && type !== 'checkbox' && type !== 'radio')
+               || tag === 'SELECT'
+               || tag === 'TEXTAREA';
+  if (!isField) return;
+  e.preventDefault();
+  const focusable = Array.from(document.querySelectorAll(
+    'input:not([disabled]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]),' +
+    'select:not([disabled]),' +
+    'textarea:not([disabled]),' +
+    'button:not([disabled])'
+  )).filter(el => {
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+  });
+  const idx = focusable.indexOf(e.target);
+  if (idx >= 0 && idx < focusable.length - 1) {
+    focusable[idx + 1].focus();
+  }
+});
+
+/* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 window.addEventListener('load', async () => {
