@@ -598,42 +598,40 @@ body.login-active {
   gap: 10px;
 }
 .stat-card {
-  background: rgba(0,0,0,.18);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,.22);
   border-radius: var(--r);
-  padding: 16px 14px;
-  transition: all .22s cubic-bezier(.34,1.56,.64,1);
+  padding: 18px 16px;
+  transition: transform .2s, box-shadow .2s;
   cursor: default;
   position: relative;
   overflow: hidden;
   animation: countUp .4s ease both;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,.28);
 }
 .stat-card:nth-child(1) { animation-delay:.15s }
 .stat-card:nth-child(2) { animation-delay:.22s }
 .stat-card:nth-child(3) { animation-delay:.29s }
-.stat-card::before {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  border-radius: 0 0 var(--r) var(--r);
-}
-.stat-card.pend::before { background: linear-gradient(90deg, var(--gold), #d4a030); }
-.stat-card.apro::before { background: linear-gradient(90deg, var(--sage), #6dab85); }
-.stat-card.rech::before { background: linear-gradient(90deg, var(--dusty-red), #cc6666); }
-.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.stat-card::before { display: none; }
+/* Pendientes — fondo amarillo */
+.stat-card.pend { background: linear-gradient(135deg, #F5C400 0%, #D4A800 100%); }
+/* Aprobados — fondo verde */
+.stat-card.apro { background: linear-gradient(135deg, #27A85F 0%, #1b8f4c 100%); }
+/* Rechazados — fondo rojo */
+.stat-card.rech { background: linear-gradient(135deg, #D93025 0%, #b52218 100%); }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.38); }
 .stat-num {
   font-family: var(--ff-display);
-  font-size: 36px; font-weight: 700;
+  font-size: 42px; font-weight: 700;
   line-height: 1;
-  color: #ffffff;
 }
-.stat-card.pend .stat-num { color: #FFE47A; }
-.stat-card.apro .stat-num { color: #90E0B0; }
-.stat-card.rech .stat-num { color: #FF9090; }
-.stat-lbl { font-size: 10px; color: rgba(255,255,255,.65); margin-top: 5px; text-transform: uppercase; letter-spacing: .7px; font-weight: 600; }
-.stat-icon { font-size: 18px; margin-bottom: 6px; }
+.stat-card.pend .stat-num { color: #1a1200; }
+.stat-card.apro .stat-num { color: #ffffff; }
+.stat-card.rech .stat-num { color: #ffffff; }
+.stat-lbl { font-size: 11px; margin-top: 6px; text-transform: uppercase; letter-spacing: .9px; font-weight: 700; }
+.stat-card.pend .stat-lbl { color: rgba(30,20,0,.70); }
+.stat-card.apro .stat-lbl { color: rgba(255,255,255,.85); }
+.stat-card.rech .stat-lbl { color: rgba(255,255,255,.85); }
+.stat-icon { font-size: 20px; margin-bottom: 8px; }
 
 /* ═══════════════════════════════════════════════════════
    FILTER BAR
