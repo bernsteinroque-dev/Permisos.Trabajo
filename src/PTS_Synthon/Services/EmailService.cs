@@ -124,6 +124,12 @@ public class EmailService : IEmailService
             "altura"   => "#2980b9",
             _          => "#B08D57"
         };
+        // Header color based on status
+        var headerColor = permiso.Estado switch {
+            "approved" => "#1e8449",
+            "rejected" => "#c0392b",
+            _          => "#8B6914"
+        };
         var estadoLabel = permiso.Estado switch {
             "approved" => "✅ APROBADO",
             "rejected" => "❌ RECHAZADO",
@@ -316,11 +322,11 @@ public class EmailService : IEmailService
 
         var html = $@"<!DOCTYPE html><html><body style='margin:0;padding:0;background:#f0ece6;font-family:Arial,sans-serif;'>
 <div style='max-width:700px;margin:20px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12);'>
-  <div style='background:{tipoColor};color:white;padding:22px 28px;'>
-    <div style='font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.8;margin-bottom:6px;'>Synthon Argentina S.A. · Sistema PTS Digital</div>
+  <div style='background:{headerColor};color:white;padding:22px 28px;'>
+    <div style='font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.85;margin-bottom:6px;'>Synthon Argentina S.A. · Sistema PTS Digital</div>
     <div style='font-size:22px;font-weight:700;margin-bottom:4px;'>{tipoLabel}</div>
     <div style='font-size:28px;font-weight:800;letter-spacing:-1px;'>N° {permiso.NumeroPermiso}</div>
-    <div style='margin-top:10px;background:rgba(255,255,255,.2);display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;'>{estadoLabel}</div>
+    <div style='margin-top:10px;background:rgba(255,255,255,.22);display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.5px;'>{estadoLabel}</div>
   </div>
   <div style='padding:0 20px 20px;'>
     <table style='width:100%;border-collapse:collapse;font-size:13px;'>
