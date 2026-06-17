@@ -841,7 +841,9 @@ body.login-active {
 }
 /* Transparent headers/sections on Synthon-bg pages */
 #pageTipo .pg-hdr, #pageDash .pg-hdr, #pageForm .pg-hdr, #pageDetail .pg-hdr {
-  background: transparent;
+  background: rgba(17,18,31,.80);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
 #pageTipo .pg-hdr-title, #pageDash .pg-hdr-title,
