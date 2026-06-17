@@ -859,6 +859,11 @@ body.login-active {
 #pageForm .fact        { background: rgba(17,18,31,.85); border-top: 1px solid rgba(255,255,255,.1); }
 #pageDetail .detail-body { background: transparent; }
 #pageDetail .fact        { background: rgba(17,18,31,.85); border-top: 1px solid rgba(255,255,255,.1); }
+/* Fix: overflow:hidden on page breaks sticky; force pg-hdr to top */
+#pageForm .pg-hdr, #pageDetail .pg-hdr {
+  position: relative;
+  top: 0;
+}
 /* Synthon brand in top-right (absolute over entire page) */
 .tipo-synthon-brand {
   position: absolute; top: 18px; right: 26px;
