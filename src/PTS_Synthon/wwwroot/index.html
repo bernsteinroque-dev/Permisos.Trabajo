@@ -825,8 +825,8 @@ body.login-active {
 /* ═══════════════════════════════════════════════════════
    TIPO SELECTOR
 ═══════════════════════════════════════════════════════ */
-/* pageTipo full-page Synthon background */
-#pageTipo {
+/* Synthon full-page background — shared by pageTipo, pageDash, pageForm, pageDetail */
+#pageTipo, #pageDash, #pageForm, #pageDetail {
   background:
     radial-gradient(ellipse 65% 85% at -8% 52%, rgba(90,15,115,.65) 0%, transparent 60%),
     linear-gradient(160deg, #1c1d36 0%, #11121f 100%);
@@ -839,13 +839,24 @@ body.login-active {
   width: 75%; height: 90%;
   pointer-events: none; z-index: 0;
 }
-/* Header transparent for pageTipo */
-#pageTipo .pg-hdr {
+/* Transparent headers/sections on Synthon-bg pages */
+#pageTipo .pg-hdr, #pageDash .pg-hdr, #pageForm .pg-hdr, #pageDetail .pg-hdr {
   background: transparent;
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
-#pageTipo .pg-hdr-title { color: rgba(255,255,255,.9); }
-#pageTipo .back-btn { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.2); }
+#pageTipo .pg-hdr-title, #pageDash .pg-hdr-title,
+#pageForm .pg-hdr-title, #pageDetail .pg-hdr-title { color: rgba(255,255,255,.9); }
+#pageTipo .back-btn, #pageDash .back-btn,
+#pageForm .back-btn, #pageDetail .back-btn { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.2); }
+/* Transparent body sections on dark pages */
+#pageDash .dash-hero   { background: transparent; border-bottom: 1px solid rgba(255,255,255,.08); }
+#pageDash .cta-bar     { background: transparent; border-bottom: 1px solid rgba(255,255,255,.08); }
+#pageDash .filter-bar  { background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.08); }
+#pageDash .list-body   { background: transparent; }
+#pageForm .form-body   { background: transparent; }
+#pageForm .fact        { background: rgba(17,18,31,.85); border-top: 1px solid rgba(255,255,255,.1); }
+#pageDetail .detail-body { background: transparent; }
+#pageDetail .fact        { background: rgba(17,18,31,.85); border-top: 1px solid rgba(255,255,255,.1); }
 /* Synthon brand in top-right (absolute over entire page) */
 .tipo-synthon-brand {
   position: absolute; top: 18px; right: 26px;
@@ -1534,6 +1545,25 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 
 <!-- ═══ DASHBOARD ═══ -->
 <div class="page active" id="pageDash">
+  <svg class="tipo-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
+    <g fill="none">
+      <path stroke="rgba(210,55,170,0.90)" stroke-width="1.0" d="M 700,700 A 200 200 0 0 1 900,500"/>
+      <path stroke="rgba(210,55,170,0.85)" stroke-width="1.0" d="M 600,700 A 300 300 0 0 1 900,400"/>
+      <path stroke="rgba(210,55,170,0.80)" stroke-width="1.1" d="M 500,700 A 400 400 0 0 1 900,300"/>
+      <path stroke="rgba(210,55,170,0.75)" stroke-width="1.1" d="M 400,700 A 500 500 0 0 1 900,200"/>
+      <path stroke="rgba(210,55,170,0.70)" stroke-width="1.2" d="M 300,700 A 600 600 0 0 1 900,100"/>
+      <path stroke="rgba(210,55,170,0.65)" stroke-width="1.2" d="M 200,700 A 700 700 0 0 1 900,0"/>
+      <path stroke="rgba(210,55,170,0.60)" stroke-width="1.1" d="M 100,700 A 800 800 0 0 1 840,0"/>
+      <path stroke="rgba(210,55,170,0.55)" stroke-width="1.0" d="M 0,700 A 900 900 0 0 1 740,0"/>
+      <path stroke="rgba(210,55,170,0.50)" stroke-width="1.0" d="M -100,700 A 1000 1000 0 0 1 640,0"/>
+      <path stroke="rgba(210,55,170,0.45)" stroke-width="0.9" d="M -200,700 A 1100 1100 0 0 1 540,0"/>
+      <path stroke="rgba(210,55,170,0.40)" stroke-width="0.9" d="M -300,700 A 1200 1200 0 0 1 440,0"/>
+      <path stroke="rgba(210,55,170,0.35)" stroke-width="0.8" d="M -400,700 A 1300 1300 0 0 1 340,0"/>
+      <path stroke="rgba(210,55,170,0.28)" stroke-width="0.8" d="M -500,700 A 1400 1400 0 0 1 240,0"/>
+      <path stroke="rgba(210,55,170,0.22)" stroke-width="0.7" d="M -600,700 A 1500 1500 0 0 1 140,0"/>
+      <path stroke="rgba(210,55,170,0.16)" stroke-width="0.7" d="M -700,700 A 1600 1600 0 0 1 40,0"/>
+    </g>
+  </svg>
   <div class="pg-scroll">
     <div class="dash-hero">
       <div class="dash-hero-inner">
@@ -1661,6 +1691,25 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 
 <!-- ═══ FORM ═══ -->
 <div class="page" id="pageForm">
+  <svg class="tipo-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
+    <g fill="none">
+      <path stroke="rgba(210,55,170,0.90)" stroke-width="1.0" d="M 700,700 A 200 200 0 0 1 900,500"/>
+      <path stroke="rgba(210,55,170,0.85)" stroke-width="1.0" d="M 600,700 A 300 300 0 0 1 900,400"/>
+      <path stroke="rgba(210,55,170,0.80)" stroke-width="1.1" d="M 500,700 A 400 400 0 0 1 900,300"/>
+      <path stroke="rgba(210,55,170,0.75)" stroke-width="1.1" d="M 400,700 A 500 500 0 0 1 900,200"/>
+      <path stroke="rgba(210,55,170,0.70)" stroke-width="1.2" d="M 300,700 A 600 600 0 0 1 900,100"/>
+      <path stroke="rgba(210,55,170,0.65)" stroke-width="1.2" d="M 200,700 A 700 700 0 0 1 900,0"/>
+      <path stroke="rgba(210,55,170,0.60)" stroke-width="1.1" d="M 100,700 A 800 800 0 0 1 840,0"/>
+      <path stroke="rgba(210,55,170,0.55)" stroke-width="1.0" d="M 0,700 A 900 900 0 0 1 740,0"/>
+      <path stroke="rgba(210,55,170,0.50)" stroke-width="1.0" d="M -100,700 A 1000 1000 0 0 1 640,0"/>
+      <path stroke="rgba(210,55,170,0.45)" stroke-width="0.9" d="M -200,700 A 1100 1100 0 0 1 540,0"/>
+      <path stroke="rgba(210,55,170,0.40)" stroke-width="0.9" d="M -300,700 A 1200 1200 0 0 1 440,0"/>
+      <path stroke="rgba(210,55,170,0.35)" stroke-width="0.8" d="M -400,700 A 1300 1300 0 0 1 340,0"/>
+      <path stroke="rgba(210,55,170,0.28)" stroke-width="0.8" d="M -500,700 A 1400 1400 0 0 1 240,0"/>
+      <path stroke="rgba(210,55,170,0.22)" stroke-width="0.7" d="M -600,700 A 1500 1500 0 0 1 140,0"/>
+      <path stroke="rgba(210,55,170,0.16)" stroke-width="0.7" d="M -700,700 A 1600 1600 0 0 1 40,0"/>
+    </g>
+  </svg>
   <div class="pg-hdr">
     <button class="back-btn" onclick="showPage('pageTipo')">←</button>
     <div class="pg-hdr-title" id="fTitle">Formulario</div>
@@ -1677,6 +1726,25 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 
 <!-- ═══ DETAIL ═══ -->
 <div class="page" id="pageDetail">
+  <svg class="tipo-synthon-lines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMaxYMax slice">
+    <g fill="none">
+      <path stroke="rgba(210,55,170,0.90)" stroke-width="1.0" d="M 700,700 A 200 200 0 0 1 900,500"/>
+      <path stroke="rgba(210,55,170,0.85)" stroke-width="1.0" d="M 600,700 A 300 300 0 0 1 900,400"/>
+      <path stroke="rgba(210,55,170,0.80)" stroke-width="1.1" d="M 500,700 A 400 400 0 0 1 900,300"/>
+      <path stroke="rgba(210,55,170,0.75)" stroke-width="1.1" d="M 400,700 A 500 500 0 0 1 900,200"/>
+      <path stroke="rgba(210,55,170,0.70)" stroke-width="1.2" d="M 300,700 A 600 600 0 0 1 900,100"/>
+      <path stroke="rgba(210,55,170,0.65)" stroke-width="1.2" d="M 200,700 A 700 700 0 0 1 900,0"/>
+      <path stroke="rgba(210,55,170,0.60)" stroke-width="1.1" d="M 100,700 A 800 800 0 0 1 840,0"/>
+      <path stroke="rgba(210,55,170,0.55)" stroke-width="1.0" d="M 0,700 A 900 900 0 0 1 740,0"/>
+      <path stroke="rgba(210,55,170,0.50)" stroke-width="1.0" d="M -100,700 A 1000 1000 0 0 1 640,0"/>
+      <path stroke="rgba(210,55,170,0.45)" stroke-width="0.9" d="M -200,700 A 1100 1100 0 0 1 540,0"/>
+      <path stroke="rgba(210,55,170,0.40)" stroke-width="0.9" d="M -300,700 A 1200 1200 0 0 1 440,0"/>
+      <path stroke="rgba(210,55,170,0.35)" stroke-width="0.8" d="M -400,700 A 1300 1300 0 0 1 340,0"/>
+      <path stroke="rgba(210,55,170,0.28)" stroke-width="0.8" d="M -500,700 A 1400 1400 0 0 1 240,0"/>
+      <path stroke="rgba(210,55,170,0.22)" stroke-width="0.7" d="M -600,700 A 1500 1500 0 0 1 140,0"/>
+      <path stroke="rgba(210,55,170,0.16)" stroke-width="0.7" d="M -700,700 A 1600 1600 0 0 1 40,0"/>
+    </g>
+  </svg>
   <div class="pg-hdr">
     <button class="back-btn" onclick="showPage('pageDash');renderList()">←</button>
     <div class="pg-hdr-title" id="dtTitle">Detalle</div>
