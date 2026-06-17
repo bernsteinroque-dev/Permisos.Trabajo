@@ -1092,8 +1092,10 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
 }
 .btn-primary { background: #ffffff; color: #1a44d4; border: 1.5px solid rgba(26,68,212,.30); box-shadow: 0 2px 14px rgba(26,68,212,.15); font-weight: 700; }
 .btn-primary:hover { transform: translateY(-2px); background: #f0f4ff; box-shadow: 0 5px 22px rgba(26,68,212,.25); }
+.btn-primary:disabled { opacity: 1; background: #e8eeff; color: rgba(26,68,212,.45); cursor: not-allowed; box-shadow: none; transform: none; }
 .btn-ghost { background: #ffffff; color: #1a44d4; border: 1.5px solid rgba(26,68,212,.30); font-weight: 700; }
 .btn-ghost:hover { background: #f0f4ff; border-color: #1a44d4; color: #1230a8; }
+.btn-ghost:disabled { opacity: 1; background: #e8eeff; color: rgba(26,68,212,.45); cursor: not-allowed; }
 .btn-green { background: linear-gradient(135deg, var(--sage), #6dab85); color: #fff; box-shadow: 0 2px 14px rgba(90,138,110,.25); }
 .btn-green:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(90,138,110,.3); }
 .btn-blue { background: linear-gradient(135deg, var(--sky), #5499d5); color: #fff; box-shadow: 0 2px 14px rgba(61,122,181,.25); }
@@ -1727,7 +1729,7 @@ input::placeholder, textarea::placeholder { color: #c8bdb5; }
   </div>
   <div class="fact">
     <button class="btn btn-ghost" onclick="showPage('pageTipo')">Cancelar</button>
-    <button class="btn btn-primary" style="flex:2" onclick="submitForm()">📨 Enviar al Proveedor</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="submitForm()">📨 Enviar al Proveedor</button>
   </div>
 </div>
 
@@ -2197,17 +2199,13 @@ function isValidDateDDMMYYYY(v) {
 function normalizeDateField(el) { if (!el) return; el.value = normalizeDateValue(el.value); }
 function currentTimeHHMMSS() { const n = new Date(); return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0') + ':' + String(n.getSeconds()).padStart(2,'0'); }
 function _setSubmitBlocked(blocked, msg) {
-  const btn = document.querySelector('.fact .btn-primary');
+  const btn = document.querySelector('.fact button:last-child');
   if (!btn) return;
   if (blocked) {
     btn.disabled = true;
-    btn.style.opacity = '.4';
-    btn.style.cursor = 'not-allowed';
     btn.title = msg || 'Corregí el PTS Origen antes de continuar';
   } else {
     btn.disabled = false;
-    btn.style.opacity = '';
-    btn.style.cursor = '';
     btn.title = '';
   }
 }
@@ -2356,12 +2354,10 @@ function provSelHtml(id) {
   return `<select id="${id}" onchange="autoFillEmpresa(this.value);onProveedorChange(this.value)"><option value="">— Seleccionar proveedor —</option>${opts}</select>`;
 }
 function onProveedorChange(val) {
-  const submitBtn = document.querySelector('.fact .btn-primary');
+  const submitBtn = document.querySelector('.fact button:last-child');
   if (!submitBtn) return;
   if (!val) {
     submitBtn.disabled = true;
-    submitBtn.style.opacity = '.4';
-    submitBtn.style.cursor = 'not-allowed';
     submitBtn.title = 'Seleccioná un proveedor para continuar';
   } else {
     // Solo habilitar si no hay otro bloqueo activo (ej: PTS Origen inválido)
@@ -2369,8 +2365,6 @@ function onProveedorChange(val) {
     const ptsBlocked = ptsOrig && ptsOrig.style.borderColor === 'var(--dusty-red)';
     if (!ptsBlocked) {
       submitBtn.disabled = false;
-      submitBtn.style.opacity = '';
-      submitBtn.style.cursor = '';
       submitBtn.title = '';
     }
   }
@@ -2751,7 +2745,7 @@ async function submitForm() {
   };
 
   try {
-    const submitBtn = document.querySelector('.fact .btn-primary');
+    const submitBtn = document.querySelector('.fact button:last-child');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Guardando...'; }
 
     const res = await fetch('/api/permisos', {
@@ -2772,7 +2766,7 @@ async function submitForm() {
   } catch (e) {
     showToast('❌ Error al guardar: ' + e.message);
   } finally {
-    const submitBtn = document.querySelector('.fact .btn-primary');
+    const submitBtn = document.querySelector('.fact button:last-child');
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '📨 Enviar al Proveedor'; }
   }
 }
